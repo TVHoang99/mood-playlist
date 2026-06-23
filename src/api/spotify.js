@@ -14,12 +14,15 @@ async function getAccessToken() {
 
 export async function searchTracks(query) {
   const token = await getAccessToken()
+  console.log('[Spotify] Searching with token:', token?.substring(0, 20) + '...')
   const res = await fetch(
     `${SPOTIFY_SEARCH_URL}?q=${encodeURIComponent(query)}&type=track&limit=10`,
     { headers: { Authorization: `Bearer ${token}` } }
   )
+  console.log('[Spotify] Search response status:', res.status)
   if (!res.ok) {
     const text = await res.text()
+    console.error('[Spotify] Search error:', res.status, text)
     throw new Error(text || `Spotify API error: ${res.status}`)
   }
   const data = await res.json()
