@@ -1,8 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { login, logout as doLogout, isLoggedIn } from '../api/spotifyAuth'
 
 export default function SpotifyLogin() {
   const [loggedIn, setLoggedIn] = useState(isLoggedIn)
+
+  useEffect(() => {
+    const check = () => setLoggedIn(isLoggedIn())
+    window.addEventListener('storage', check)
+    window.addEventListener('spotify-auth', check)
+    const timer = setInterval(check, 1000)
+    return () => {
+      window.removeEventListener('storage', check)
+      window.removeEventListener('spotify-auth', check)
+      clearInterval(timer)
+    }
+  }, [])
 
   const handleLogin = () => {
     login()
