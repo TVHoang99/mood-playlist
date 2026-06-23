@@ -1,63 +1,22 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { isLoggedIn } from '../api/spotifyAuth'
 import { useSpotifyPlayer } from '../hooks/useSpotifyPlayer'
 
-let ytSdkLoaded = false
-
-function loadYouTubeSDK() {
-  if (ytSdkLoaded) return Promise.resolve()
-  return new Promise((resolve) => {
-    const tag = document.createElement('script')
-    tag.src = 'https://www.youtube.com/iframe_api'
-    document.head.appendChild(tag)
-    window.onYouTubeIframeAPIReady = () => {
-      ytSdkLoaded = true
-      resolve()
-    }
-  })
-}
-
 export default function PlayerModal({ track, tracks, onClose, onPlay }) {
   const overlayRef = useRef(null)
-  const ytPlayerRef = useRef(null)
-  const ytContainerRef = useRef(null)
   const { player: spotifyPlayer, playTrack, togglePlay, isPlaying } = useSpotifyPlayer()
   const spotifyReady = !!spotifyPlayer
 
-  const destroyYTPlayer = useCallback(() => {
-    if (ytPlayerRef.current) {
-      ytPlayerRef.current.destroy()
-      ytPlayerRef.current = null
-    }
-  }, [])
-
   useEffect(() => {
-    destroyYTPlayer()
     if (!track) return
-
-    if (track.source === 'youtube') {
-      loadYouTubeSDK().then(() => {
-        if (!ytContainerRef.current) return
-        ytPlayerRef.current = new window.YT.Player(ytContainerRef.current, {
-          videoId: track.id,
-          playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
-          events: { onReady: (e) => e.target.playVideo() },
-        })
-      })
-    }
-
     if (track.source === 'spotify' && isLoggedIn() && spotifyPlayer) {
       playTrack(track.id)
     }
-
-    return destroyYTPlayer
-  }, [track, spotifyPlayer, playTrack, destroyYTPlayer])
+  }, [track, spotifyPlayer, playTrack])
 
   if (!track) return null
 
-  const isYouTube = track.source === 'youtube'
-  const isSpotify = track.source === 'spotify'
-  const useSpotifySDK = isSpotify && isLoggedIn() && spotifyReady
+  const useSpotifySDK = isLoggedIn() && spotifyReady
 
   const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
   const prevTrack = currentIndex > 0 ? tracks[currentIndex - 1] : null
@@ -80,13 +39,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
         </button>
 
         <div className="bg-slate-900 rounded-2xl overflow-hidden border border-slate-700">
-          {isYouTube && (
-            <div className="relative pt-[56.25%]">
-              <div ref={ytContainerRef} className="absolute inset-0 w-full h-full" />
-            </div>
-          )}
-
-          {isSpotify && useSpotifySDK && (
+          {useSpotifySDK && (
             <div className="p-6 flex flex-col items-center gap-4">
               <img
                 src={track.thumbnail}
@@ -106,7 +59,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
             </div>
           )}
 
-          {isSpotify && !useSpotifySDK && (
+          {!useSpotifySDK && (
             <div className="p-4">
               <iframe
                 className="w-full rounded-lg"
@@ -125,10 +78,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 
             <div className="flex items-center justify-between mt-4">
               <button
-                onClick={() => {
-                  destroyYTPlayer()
-                  prevTrack && onPlay(prevTrack)
-                }}
+                onClick={() => prevTrack && onPlay(prevTrack)}
                 disabled={!prevTrack}
                 className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
@@ -138,10 +88,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
                 {currentIndex + 1} / {tracks.length}
               </span>
               <button
-                onClick={() => {
-                  destroyYTPlayer()
-                  nextTrack && onPlay(nextTrack)
-                }}
+                onClick={() => nextTrack && onPlay(nextTrack)}
                 disabled={!nextTrack}
                 className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >

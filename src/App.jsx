@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { PlaylistProvider, usePlaylist } from './context/PlaylistContext'
 import { decodePlaylist } from './utils/share'
 import { useMoodPlaylist } from './hooks/useMoodPlaylist'
@@ -10,9 +10,16 @@ import PlaylistView from './components/PlaylistView'
 function AppContent() {
   const { dispatch } = usePlaylist()
   const { fetchPlaylist } = useMoodPlaylist()
+  const [authReady, setAuthReady] = useState(false)
 
   useEffect(() => {
-    handleCallback().catch(() => {})
+    handleCallback()
+      .catch(() => {})
+      .finally(() => setAuthReady(true))
+  }, [])
+
+  useEffect(() => {
+    if (!authReady) return
 
     const hash = window.location.hash.slice(1)
     if (hash) {
@@ -23,7 +30,7 @@ function AppContent() {
       }
     }
     fetchPlaylist('happy')
-  }, [dispatch, fetchPlaylist])
+  }, [authReady, dispatch, fetchPlaylist])
 
   return (
     <div className="min-h-screen">

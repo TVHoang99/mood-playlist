@@ -1,3 +1,5 @@
+import { refreshToken as refreshUserToken } from './spotifyAuth'
+
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/api/token'
 const SPOTIFY_SEARCH_URL = 'https://api.spotify.com/v1/search'
 
@@ -5,6 +7,17 @@ let cachedToken = null
 let tokenExpiry = 0
 
 async function getAccessToken() {
+  const userToken = localStorage.getItem('spotify_access_token')
+  const userExpiry = localStorage.getItem('spotify_token_expiry')
+  if (userToken && userExpiry && Date.now() < parseInt(userExpiry)) {
+    return userToken
+  }
+
+  const refreshed = await refreshUserToken()
+  if (refreshed) {
+    return localStorage.getItem('spotify_access_token')
+  }
+
   if (cachedToken && Date.now() < tokenExpiry) return cachedToken
 
   const res = await fetch(SPOTIFY_AUTH_URL, {
@@ -29,7 +42,14 @@ export async function searchTracks(query) {
     `${SPOTIFY_SEARCH_URL}?q=${encodeURIComponent(query)}&type=track&limit=10`,
     { headers: { Authorization: `Bearer ${token}` } }
   )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Spotify API error: ${res.status}`)
+  }
   const data = await res.json()
+  if (data.error) {
+    throw new Error(data.error.message || 'Spotify API error')
+  }
   return (data.tracks?.items || []).map((t) => ({
     id: t.id,
     title: t.name,

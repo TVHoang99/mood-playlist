@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { usePlaylist } from '../context/PlaylistContext'
 import { searchTracks } from '../api/spotify'
-import { searchVideos } from '../api/youtube'
 import { MOODS } from '../utils/moodConfig'
 
 export function useMoodPlaylist() {
@@ -13,24 +12,14 @@ export function useMoodPlaylist() {
       dispatch({ type: 'SET_MOOD', mood })
 
       try {
-        const [spotifyTracks, youtubeTracks] = await Promise.allSettled([
-          searchTracks(query),
-          searchVideos(query),
-        ])
-
-        const sTracks = spotifyTracks.status === 'fulfilled' ? spotifyTracks.value : []
-        const yTracks = youtubeTracks.status === 'fulfilled' ? youtubeTracks.value : []
-
-        const merged = []
-        const maxLen = Math.max(sTracks.length, yTracks.length)
-        for (let i = 0; i < maxLen; i++) {
-          if (i < sTracks.length) merged.push(sTracks[i])
-          if (i < yTracks.length) merged.push(yTracks[i])
+        const tracks = await searchTracks(query)
+        if (tracks.length === 0) {
+          dispatch({ type: 'SET_ERROR', error: 'No tracks found' })
+          return
         }
-
-        dispatch({ type: 'SET_PLAYLIST', tracks: merged.slice(0, 20) })
-      } catch {
-        dispatch({ type: 'SET_ERROR', error: 'Failed to fetch playlists' })
+        dispatch({ type: 'SET_PLAYLIST', tracks: tracks.slice(0, 20) })
+      } catch (err) {
+        dispatch({ type: 'SET_ERROR', error: err.message || 'Failed to fetch playlists' })
       }
     },
     [dispatch]

@@ -21,14 +21,8 @@ export default function TrackCard({ track, isActive, onPlay }) {
         </p>
         <p className="text-xs text-slate-400 truncate">{track.artist}</p>
       </div>
-      <span
-        className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${
-          track.source === 'spotify'
-            ? 'bg-green-500/20 text-green-400'
-            : 'bg-red-500/20 text-red-400'
-        }`}
-      >
-        {track.source === 'spotify' ? 'Spotify' : 'YouTube'}
+      <span className="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 bg-green-500/20 text-green-400">
+        Spotify
       </span>
     </button>
   )
