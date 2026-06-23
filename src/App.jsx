@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { PlaylistProvider, usePlaylist } from './context/PlaylistContext'
 import { decodePlaylist } from './utils/share'
 import { useMoodPlaylist } from './hooks/useMoodPlaylist'
+import { handleCallback } from './api/spotifyAuth'
 import Header from './components/Header'
 import MoodSelector from './components/MoodSelector'
 import PlaylistView from './components/PlaylistView'
@@ -11,6 +12,8 @@ function AppContent() {
   const { fetchPlaylist } = useMoodPlaylist()
 
   useEffect(() => {
+    handleCallback().catch(() => {})
+
     const hash = window.location.hash.slice(1)
     if (hash) {
       const data = decodePlaylist(hash)

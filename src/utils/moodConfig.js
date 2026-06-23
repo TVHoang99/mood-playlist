@@ -2,7 +2,7 @@ export const MOODS = {
   happy: {
     label: 'Happy',
     icon: '☀️',
-    query: 'MCK',
+    query: 'Phonk',
     gradient: 'from-yellow-400 to-orange-400',
     bg: 'bg-yellow-500/10',
     accent: 'text-yellow-400',

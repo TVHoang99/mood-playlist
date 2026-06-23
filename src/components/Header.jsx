@@ -1,4 +1,5 @@
 import SavedPlaylists from './SavedPlaylists'
+import SpotifyLogin from './SpotifyLogin'
 
 export default function Header() {
   return (
@@ -9,7 +10,10 @@ export default function Header() {
         </h1>
         <p className="text-sm text-slate-400">Pick your mood, get your music</p>
       </div>
-      <SavedPlaylists />
+      <div className="flex items-center gap-3">
+        <SpotifyLogin />
+        <SavedPlaylists />
+      </div>
     </header>
   )
 }
