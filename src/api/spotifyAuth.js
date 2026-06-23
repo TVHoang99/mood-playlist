@@ -1,5 +1,5 @@
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
-const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || window.location.href.split('?')[0].replace(/\/$/, '')
+const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || window.location.href.split('?')[0]
 const SCOPES = ['streaming', 'user-read-playback-state', 'user-modify-playback-state'].join(' ')
 
 function generateRandomString(length) {
