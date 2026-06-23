@@ -1,0 +1,48 @@
+import { useEffect } from 'react'
+import { PlaylistProvider, usePlaylist } from './context/PlaylistContext'
+import { decodePlaylist } from './utils/share'
+import { useMoodPlaylist } from './hooks/useMoodPlaylist'
+import Header from './components/Header'
+import MoodSelector from './components/MoodSelector'
+import PlaylistView from './components/PlaylistView'
+
+function AppContent() {
+  const { dispatch } = usePlaylist()
+  const { fetchPlaylist } = useMoodPlaylist()
+
+  useEffect(() => {
+    const hash = window.location.hash.slice(1)
+    if (hash) {
+      const data = decodePlaylist(hash)
+      if (data) {
+        dispatch({ type: 'LOAD_PLAYLIST', tracks: data.t, mood: data.m })
+        return
+      }
+    }
+    fetchPlaylist('happy')
+  }, [dispatch, fetchPlaylist])
+
+  return (
+    <div className="min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 pb-12">
+        <Header />
+        <main className="mt-8 space-y-10">
+          <section className="text-center">
+            <h2 className="text-3xl font-bold text-white mb-2">How are you feeling?</h2>
+            <p className="text-slate-400 mb-8">Choose a mood and we'll find the perfect playlist</p>
+            <MoodSelector />
+          </section>
+          <PlaylistView />
+        </main>
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <PlaylistProvider>
+      <AppContent />
+    </PlaylistProvider>
+  )
+}
