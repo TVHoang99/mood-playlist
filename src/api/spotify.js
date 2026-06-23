@@ -4,11 +4,18 @@ const SPOTIFY_SEARCH_URL = 'https://api.spotify.com/v1/search'
 
 async function getAccessToken() {
   const userToken = getUserToken()
+  console.log('[Spotify] User token from localStorage:', userToken ? userToken.substring(0, 30) + '...' : 'null')
   if (userToken) return userToken
 
+  console.log('[Spotify] No user token, trying refresh...')
   const refreshed = await refreshUserToken()
-  if (refreshed) return getUserToken()
+  if (refreshed) {
+    const newToken = getUserToken()
+    console.log('[Spotify] Refreshed token:', newToken ? newToken.substring(0, 30) + '...' : 'null')
+    return newToken
+  }
 
+  console.log('[Spotify] No refresh available')
   throw new Error('No valid Spotify token. Please login first.')
 }
 
