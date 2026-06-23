@@ -1,39 +1,15 @@
-import { refreshToken as refreshUserToken } from './spotifyAuth'
+import { refreshToken as refreshUserToken, getAccessToken as getUserToken } from './spotifyAuth'
 
-const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/api/token'
 const SPOTIFY_SEARCH_URL = 'https://api.spotify.com/v1/search'
 
-let cachedToken = null
-let tokenExpiry = 0
-
 async function getAccessToken() {
-  const userToken = localStorage.getItem('spotify_access_token')
-  const userExpiry = localStorage.getItem('spotify_token_expiry')
-  if (userToken && userExpiry && Date.now() < parseInt(userExpiry)) {
-    return userToken
-  }
+  const userToken = getUserToken()
+  if (userToken) return userToken
 
   const refreshed = await refreshUserToken()
-  if (refreshed) {
-    return localStorage.getItem('spotify_access_token')
-  }
+  if (refreshed) return getUserToken()
 
-  if (cachedToken && Date.now() < tokenExpiry) return cachedToken
-
-  const res = await fetch(SPOTIFY_AUTH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: import.meta.env.VITE_SPOTIFY_CLIENT_ID,
-      client_secret: import.meta.env.VITE_SPOTIFY_CLIENT_SECRET,
-    }),
-  })
-  const data = await res.json()
-  if (!data.access_token) throw new Error('Spotify auth failed')
-  cachedToken = data.access_token
-  tokenExpiry = Date.now() + data.expires_in * 1000 - 60000
-  return cachedToken
+  throw new Error('No valid Spotify token. Please login first.')
 }
 
 export async function searchTracks(query) {

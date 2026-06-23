@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usePlaylist } from '../context/PlaylistContext'
+import { isLoggedIn } from '../api/spotifyAuth'
 import { shuffle } from '../utils/shuffle'
 import { MOODS } from '../utils/moodConfig'
 import TrackCard from './TrackCard'
@@ -24,7 +25,9 @@ export default function PlaylistView() {
     return (
       <div className="text-center py-20">
         <p className="text-red-400 text-lg">{state.error}</p>
-        <p className="text-slate-500 mt-2">Check your API keys in .env</p>
+        {!isLoggedIn() && (
+          <p className="text-slate-400 mt-2">Please login with Spotify to access music</p>
+        )}
       </div>
     )
   }

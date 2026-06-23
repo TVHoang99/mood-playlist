@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { PlaylistProvider, usePlaylist } from './context/PlaylistContext'
 import { decodePlaylist } from './utils/share'
 import { useMoodPlaylist } from './hooks/useMoodPlaylist'
-import { handleCallback } from './api/spotifyAuth'
+import { handleCallback, isLoggedIn } from './api/spotifyAuth'
 import Header from './components/Header'
 import MoodSelector from './components/MoodSelector'
 import PlaylistView from './components/PlaylistView'
@@ -29,7 +29,10 @@ function AppContent() {
         return
       }
     }
-    fetchPlaylist('happy')
+
+    if (isLoggedIn()) {
+      fetchPlaylist('happy')
+    }
   }, [authReady, dispatch, fetchPlaylist])
 
   return (
