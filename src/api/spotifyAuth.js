@@ -1,6 +1,6 @@
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
 const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || 'https://tvhoang99.github.io/mood-playlist/'
-const SCOPES = ['streaming', 'user-read-playback-state', 'user-modify-playback-state', 'user-library-read'].join(' ')
+const SCOPES = ['streaming', 'user-read-playback-state', 'user-modify-playback-state', 'user-library-read', 'user-read-private'].join(' ')
 
 function generateRandomString(length) {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
