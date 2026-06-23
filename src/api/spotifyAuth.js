@@ -77,10 +77,12 @@ export async function handleCallback() {
   const code = params.get('code')
   const error = params.get('error')
 
+  console.log('[SpotifyAuth] handleCallback - code:', code ? 'present' : 'missing', 'error:', error)
   if (error) throw new Error(error)
   if (!code) return false
 
   const verifier = localStorage.getItem('spotify_code_verifier')
+  console.log('[SpotifyAuth] verifier:', verifier ? 'present' : 'missing')
 
   const res = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
@@ -95,10 +97,13 @@ export async function handleCallback() {
   })
 
   const data = await res.json()
+  console.log('[SpotifyAuth] token response:', data.access_token ? 'SUCCESS' : 'FAILED', data.error || '')
+
   if (data.access_token) {
     setTokens(data.access_token, data.refresh_token, data.expires_in)
     window.history.replaceState({}, document.title, window.location.pathname)
     window.dispatchEvent(new Event('spotify-auth'))
+    console.log('[SpotifyAuth] tokens stored, dispatched event')
     return true
   }
 

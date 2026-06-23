@@ -5,12 +5,15 @@ export default function SpotifyLogin() {
   const [loggedIn, setLoggedIn] = useState(isLoggedIn)
 
   useEffect(() => {
-    const check = () => setLoggedIn(isLoggedIn())
-    window.addEventListener('storage', check)
+    const check = () => {
+      const status = isLoggedIn()
+      console.log('[SpotifyLogin] check:', status)
+      setLoggedIn(status)
+    }
     window.addEventListener('spotify-auth', check)
-    const timer = setInterval(check, 1000)
+    const timer = setInterval(check, 500)
+    check()
     return () => {
-      window.removeEventListener('storage', check)
       window.removeEventListener('spotify-auth', check)
       clearInterval(timer)
     }
