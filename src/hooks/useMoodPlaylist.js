@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react'
 import { usePlaylist } from './usePlaylist'
-import { searchTracks } from '../api/spotify'
+import { getRecommendations, searchTracks } from '../api/spotify'
 import { isLoggedIn } from '../api/spotifyAuth'
 import { MOODS } from '../utils/moodConfig'
 import { useSync } from './useSync'
@@ -19,7 +19,7 @@ export function useMoodPlaylist() {
 			const controller = new AbortController()
 			abortRef.current = controller
 
-			const query = MOODS[mood].query
+			const moodConfig = MOODS[mood]
 			dispatch({ type: 'SET_MOOD', mood })
 
 			if (!isLoggedIn()) {
@@ -28,7 +28,16 @@ export function useMoodPlaylist() {
 			}
 
 			try {
-				const tracks = await searchTracks(query, controller.signal)
+				let tracks = []
+
+				if (moodConfig.recommendations) {
+					tracks = await getRecommendations(moodConfig.recommendations, controller.signal)
+				}
+
+				if (tracks.length === 0 && moodConfig.query) {
+					tracks = await searchTracks(moodConfig.query, controller.signal)
+				}
+
 				if (controller.signal.aborted) return
 
 				if (tracks.length === 0) {

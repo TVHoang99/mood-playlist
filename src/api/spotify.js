@@ -1,6 +1,6 @@
 import { refreshToken as refreshUserToken, getAccessToken as getUserToken } from './spotifyAuth'
 
-const SPOTIFY_SEARCH_URL = 'https://api.spotify.com/v1/search'
+const SPOTIFY_API_URL = 'https://api.spotify.com/v1'
 
 let refreshPromise = null
 
@@ -24,7 +24,7 @@ async function getAccessToken() {
 export async function searchTracks(query, signal) {
 	const token = await getAccessToken()
 	const res = await fetch(
-		`${SPOTIFY_SEARCH_URL}?q=${encodeURIComponent(query)}&type=track&limit=10`,
+		`${SPOTIFY_API_URL}/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
 		{ headers: { Authorization: `Bearer ${token}` }, signal }
 	)
 	if (!res.ok) {
@@ -36,6 +36,58 @@ export async function searchTracks(query, signal) {
 		throw new Error(data.error.message || 'Spotify API error')
 	}
 	return (data.tracks?.items || []).map((t) => ({
+		id: t.id,
+		title: t.name,
+		artist: t.artists.map((a) => a.name).join(', '),
+		url: t.external_urls.spotify,
+		thumbnail: t.album.images[0]?.url || '',
+		duration: t.duration_ms,
+		source: 'spotify',
+	}))
+}
+
+function buildRecommendationsParams(recommendations) {
+	const params = new URLSearchParams()
+	params.set('limit', '20')
+
+	if (recommendations.seed_genres) {
+		params.set('seed_genres', recommendations.seed_genres)
+	}
+	if (recommendations.target_valence !== undefined) {
+		params.set('target_valence', recommendations.target_valence)
+	}
+	if (recommendations.target_energy !== undefined) {
+		params.set('target_energy', recommendations.target_energy)
+	}
+	if (recommendations.target_acousticness !== undefined) {
+		params.set('target_acousticness', recommendations.target_acousticness)
+	}
+	if (recommendations.target_instrumentalness !== undefined) {
+		params.set('target_instrumentalness', recommendations.target_instrumentalness)
+	}
+	if (recommendations.target_tempo !== undefined) {
+		params.set('target_tempo', recommendations.target_tempo)
+	}
+
+	return params.toString()
+}
+
+export async function getRecommendations(recommendations, signal) {
+	const token = await getAccessToken()
+	const params = buildRecommendationsParams(recommendations)
+	const res = await fetch(
+		`${SPOTIFY_API_URL}/recommendations?${params}`,
+		{ headers: { Authorization: `Bearer ${token}` }, signal }
+	)
+	if (!res.ok) {
+		const text = await res.text()
+		throw new Error(text || `Spotify API error: ${res.status}`)
+	}
+	const data = await res.json()
+	if (data.error) {
+		throw new Error(data.error.message || 'Spotify API error')
+	}
+	return (data.tracks || []).map((t) => ({
 		id: t.id,
 		title: t.name,
 		artist: t.artists.map((a) => a.name).join(', '),

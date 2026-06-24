@@ -8,6 +8,11 @@ export const MOODS = {
 		accent: 'text-yellow-400',
 		border: 'border-yellow-500/30 hover:border-yellow-400',
 		ring: 'ring-yellow-400/50',
+		recommendations: {
+			seed_genres: 'pop,happy,party',
+			target_valence: 0.85,
+			target_energy: 0.8,
+		},
 	},
 	sad: {
 		label: 'Sad',
@@ -18,6 +23,11 @@ export const MOODS = {
 		accent: 'text-blue-400',
 		border: 'border-blue-500/30 hover:border-blue-400',
 		ring: 'ring-blue-400/50',
+		recommendations: {
+			seed_genres: 'sad,emo,indie',
+			target_valence: 0.2,
+			target_energy: 0.3,
+		},
 	},
 	focused: {
 		label: 'Focused',
@@ -28,6 +38,12 @@ export const MOODS = {
 		accent: 'text-purple-400',
 		border: 'border-purple-500/30 hover:border-purple-400',
 		ring: 'ring-purple-400/50',
+		recommendations: {
+			seed_genres: 'ambient,study,lo-fi',
+			target_valence: 0.5,
+			target_energy: 0.4,
+			target_instrumentalness: 0.7,
+		},
 	},
 	relax: {
 		label: 'Relax',
@@ -38,6 +54,12 @@ export const MOODS = {
 		accent: 'text-teal-400',
 		border: 'border-teal-500/30 hover:border-teal-400',
 		ring: 'ring-teal-400/50',
+		recommendations: {
+			seed_genres: 'chill,acoustic,indie',
+			target_valence: 0.5,
+			target_energy: 0.3,
+			target_acousticness: 0.7,
+		},
 	},
 	podcast: {
 		label: 'Podcast',
@@ -48,6 +70,11 @@ export const MOODS = {
 		accent: 'text-orange-400',
 		border: 'border-orange-500/30 hover:border-orange-400',
 		ring: 'ring-orange-400/50',
+		recommendations: {
+			seed_genres: 'podcast,talk,news',
+			target_valence: 0.5,
+			target_energy: 0.5,
+		},
 	},
 	mck: {
 		label: 'MCK',
@@ -58,6 +85,11 @@ export const MOODS = {
 		accent: 'text-pink-400',
 		border: 'border-pink-500/30 hover:border-pink-400',
 		ring: 'ring-pink-400/50',
+		recommendations: {
+			seed_genres: 'rap,hip-hop,vietnamese',
+			target_valence: 0.6,
+			target_energy: 0.7,
+		},
 	},
 	sontung: {
 		label: 'Sơn Tùng',
@@ -68,6 +100,11 @@ export const MOODS = {
 		accent: 'text-emerald-400',
 		border: 'border-emerald-500/30 hover:border-emerald-400',
 		ring: 'ring-emerald-400/50',
+		recommendations: {
+			seed_genres: 'vietnamese,v-pop,Pop',
+			target_valence: 0.7,
+			target_energy: 0.6,
+		},
 	},
 	usuk: {
 		label: 'US-UK',
@@ -78,5 +115,18 @@ export const MOODS = {
 		accent: 'text-indigo-400',
 		border: 'border-indigo-500/30 hover:border-indigo-400',
 		ring: 'ring-indigo-400/50',
+		recommendations: {
+			seed_genres: 'pop,rock,dance',
+			target_valence: 0.7,
+			target_energy: 0.7,
+		},
 	},
 }
+
+export const GENRES = [
+	'pop', 'rock', 'hip-hop', 'rap', 'r&b', 'soul', 'jazz', 'blues',
+	'classical', 'electronic', 'dance', 'house', 'techno', 'trance',
+	'lo-fi', 'ambient', 'chill', 'indie', 'alternative', 'punk',
+	'country', 'folk', 'acoustic', 'reggae', 'latin', 'k-pop',
+	'j-pop', 'v-pop', 'vietnamese', 'thai', 'mandopop',
+]
