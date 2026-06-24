@@ -15,9 +15,8 @@ export default function RoomManager() {
 		}
 	}
 
-	const handleCopyLink = () => {
-		const url = `${window.location.origin}${window.location.pathname}?room=${roomId}`
-		navigator.clipboard.writeText(url)
+	const handleCopyRoomId = () => {
+		navigator.clipboard.writeText(roomId)
 	}
 
 	if (roomId) {
@@ -28,10 +27,10 @@ export default function RoomManager() {
 					<span className="ml-2 text-slate-400">({listeners} listening)</span>
 				</div>
 				<button
-					onClick={handleCopyLink}
+					onClick={handleCopyRoomId}
 					className="px-3 py-1.5 text-xs rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
 				>
-					Copy Link
+					Copy Room ID
 				</button>
 				<button
 					onClick={leaveCurrentRoom}
