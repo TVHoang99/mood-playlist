@@ -15,15 +15,20 @@ async function checkPremium() {
 			await refreshToken()
 			token = getAccessToken()
 		}
-		if (!token) return false
+		if (!token) {
+			console.log('[Player] No token available')
+			return false
+		}
 
 		const res = await fetch('https://api.spotify.com/v1/me', {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 		const data = await res.json()
+		console.log('[Player] Premium check:', data.product)
 		hasPremium = data.product === 'premium'
 		return hasPremium
-	} catch {
+	} catch (err) {
+		console.log('[Player] Premium check failed:', err)
 		hasPremium = false
 		return false
 	}
@@ -38,6 +43,7 @@ function loadSpotifySDK() {
 		const timeout = setTimeout(() => {
 			sdkPromise = null
 			sdkFailed = true
+			console.log('[Player] SDK load timeout')
 			reject(new Error('timeout'))
 		}, 8000)
 
@@ -49,6 +55,7 @@ function loadSpotifySDK() {
 			clearTimeout(timeout)
 			sdkPromise = null
 			sdkFailed = true
+			console.log('[Player] SDK script load error')
 			reject(new Error('load'))
 		}
 
@@ -56,6 +63,7 @@ function loadSpotifySDK() {
 			clearTimeout(timeout)
 			sdkLoaded = true
 			sdkPromise = null
+			console.log('[Player] SDK loaded successfully')
 			resolve()
 		}
 
@@ -74,13 +82,19 @@ export default function BottomPlayer({ track, onPlay }) {
 	const deviceIdRef = useRef(null)
 	const [sdkReady, setSdkReady] = useState(false)
 	const [userPremium, setUserPremium] = useState(false)
+	const [debugMsg, setDebugMsg] = useState('')
 
 	const initSDK = useCallback(() => {
-		if (sdkFailed) return
+		if (sdkFailed) {
+			setDebugMsg('SDK previously failed')
+			return
+		}
 
+		setDebugMsg('Loading SDK...')
 		loadSpotifySDK().then(() => {
 			if (playerRef.current) return
 
+			setDebugMsg('Creating player...')
 			const p = new window.Spotify.Player({
 				name: 'Mood Playlist',
 				getOAuthToken: async (cb) => {
@@ -95,22 +109,40 @@ export default function BottomPlayer({ track, onPlay }) {
 			})
 
 			p.addListener('ready', ({ device_id }) => {
+				console.log('[Player] SDK ready, device:', device_id)
 				deviceIdRef.current = device_id
 				playerRef.current = p
 				setSdkReady(true)
+				setDebugMsg('SDK ready!')
 			})
 
-			p.addListener('authentication_error', () => {
+			p.addListener('authentication_error', (err) => {
+				console.log('[Player] Auth error:', err.message)
 				sdkFailed = true
+				setDebugMsg('Auth error: ' + err.message)
 			})
 
-			p.addListener('account_error', () => {
+			p.addListener('account_error', (err) => {
+				console.log('[Player] Account error:', err.message)
 				sdkFailed = true
+				setDebugMsg('Account error: ' + err.message)
 			})
 
-			p.connect()
-		}).catch(() => {
+			p.addListener('playback_error', (err) => {
+				console.log('[Player] Playback error:', err.message)
+			})
+
+			p.connect().then((connected) => {
+				console.log('[Player] Connect result:', connected)
+				if (!connected) {
+					sdkFailed = true
+					setDebugMsg('SDK connect returned false')
+				}
+			})
+		}).catch((err) => {
+			console.log('[Player] SDK load failed:', err)
 			sdkFailed = true
+			setDebugMsg('SDK load failed: ' + err.message)
 		})
 	}, [])
 
@@ -118,8 +150,10 @@ export default function BottomPlayer({ track, onPlay }) {
 		if (!isLoggedIn()) return
 		checkPremium().then((premium) => {
 			setUserPremium(premium)
-			if (premium && !sdkFailed) {
+			if (premium) {
 				initSDK()
+			} else {
+				setDebugMsg('No Premium - using iframe')
 			}
 		})
 	}, [initSDK])
@@ -142,8 +176,10 @@ export default function BottomPlayer({ track, onPlay }) {
 				},
 				body: JSON.stringify({ uris: [`spotify:track:${trackId}`] }),
 			})
+			console.log('[Player] Play result:', res.status)
 			return res.ok || res.status === 204
-		} catch {
+		} catch (err) {
+			console.log('[Player] Play error:', err)
 			return false
 		}
 	}, [])
@@ -156,6 +192,7 @@ export default function BottomPlayer({ track, onPlay }) {
 			setIframeKey((k) => k + 1)
 
 			if (sdkReady && track.source === 'spotify') {
+				console.log('[Player] Playing track via SDK:', track.id)
 				playOnSDK(track.id)
 			}
 		}
@@ -211,6 +248,9 @@ export default function BottomPlayer({ track, onPlay }) {
 						allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
 						loading="lazy"
 					/>
+				)}
+				{debugMsg && (
+					<p className="text-[10px] text-slate-600 mt-1 text-center">{debugMsg}</p>
 				)}
 			</div>
 		</div>
