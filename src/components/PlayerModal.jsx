@@ -120,6 +120,18 @@ export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpda
 				}
 			})
 
+			p.addListener('authentication_error', () => {
+				if (!cancelled) setSdkReady(false)
+			})
+
+			p.addListener('account_error', () => {
+				if (!cancelled) setSdkReady(false)
+			})
+
+			p.addListener('playback_error', () => {
+				if (!cancelled) setSdkReady(false)
+			})
+
 			p.connect()
 		}).catch(() => {})
 
