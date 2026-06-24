@@ -77,12 +77,10 @@ export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 	useEffect(() => {
 		if (!roomId || !currentTrack || isHost) return
 		if (lastSyncedId.current === currentTrack.id) return
-		const exists = tracks.find((t) => t.id === currentTrack.id && t.source === currentTrack.source)
-		if (exists && (!track || track.id !== currentTrack.id)) {
-			lastSyncedId.current = currentTrack.id
-			onPlay(currentTrack)
-		}
-	}, [currentTrack, roomId, isHost, tracks, track, onPlay])
+		if (track && track.id === currentTrack.id) return
+		lastSyncedId.current = currentTrack.id
+		onPlay(currentTrack)
+	}, [currentTrack, roomId, isHost, track, onPlay])
 
 	if (!track) return null
 
