@@ -9,7 +9,7 @@ export const MOODS = {
 		border: 'border-yellow-500/30 hover:border-yellow-400',
 		ring: 'ring-yellow-400/50',
 		recommendations: {
-			seed_genres: 'pop,happy,party',
+			seed_genres: 'pop,dance,disco',
 			target_valence: 0.85,
 			target_energy: 0.8,
 		},
@@ -24,7 +24,7 @@ export const MOODS = {
 		border: 'border-blue-500/30 hover:border-blue-400',
 		ring: 'ring-blue-400/50',
 		recommendations: {
-			seed_genres: 'sad,emo,indie',
+			seed_genres: 'indie,alternative,singer-songwriter',
 			target_valence: 0.2,
 			target_energy: 0.3,
 		},
@@ -39,7 +39,7 @@ export const MOODS = {
 		border: 'border-purple-500/30 hover:border-purple-400',
 		ring: 'ring-purple-400/50',
 		recommendations: {
-			seed_genres: 'ambient,study,lo-fi',
+			seed_genres: 'ambient,electronic,new-age',
 			target_valence: 0.5,
 			target_energy: 0.4,
 			target_instrumentalness: 0.7,
@@ -55,7 +55,7 @@ export const MOODS = {
 		border: 'border-teal-500/30 hover:border-teal-400',
 		ring: 'ring-teal-400/50',
 		recommendations: {
-			seed_genres: 'chill,acoustic,indie',
+			seed_genres: 'acoustic,folk,jazz',
 			target_valence: 0.5,
 			target_energy: 0.3,
 			target_acousticness: 0.7,
@@ -71,7 +71,7 @@ export const MOODS = {
 		border: 'border-orange-500/30 hover:border-orange-400',
 		ring: 'ring-orange-400/50',
 		recommendations: {
-			seed_genres: 'podcast,talk,news',
+			seed_genres: 'rock,alternative,indie',
 			target_valence: 0.5,
 			target_energy: 0.5,
 		},
@@ -86,7 +86,7 @@ export const MOODS = {
 		border: 'border-pink-500/30 hover:border-pink-400',
 		ring: 'ring-pink-400/50',
 		recommendations: {
-			seed_genres: 'rap,hip-hop,vietnamese',
+			seed_genres: 'hip-hop,rap,urban',
 			target_valence: 0.6,
 			target_energy: 0.7,
 		},
@@ -101,7 +101,7 @@ export const MOODS = {
 		border: 'border-emerald-500/30 hover:border-emerald-400',
 		ring: 'ring-emerald-400/50',
 		recommendations: {
-			seed_genres: 'vietnamese,v-pop,Pop',
+			seed_genres: 'pop,k-pop,vietnamese',
 			target_valence: 0.7,
 			target_energy: 0.6,
 		},
@@ -124,9 +124,12 @@ export const MOODS = {
 }
 
 export const GENRES = [
-	'pop', 'rock', 'hip-hop', 'rap', 'r&b', 'soul', 'jazz', 'blues',
-	'classical', 'electronic', 'dance', 'house', 'techno', 'trance',
-	'lo-fi', 'ambient', 'chill', 'indie', 'alternative', 'punk',
-	'country', 'folk', 'acoustic', 'reggae', 'latin', 'k-pop',
-	'j-pop', 'v-pop', 'vietnamese', 'thai', 'mandopop',
+	'acoustic', 'alternative', 'ambient', 'blues', 'brazil', 'classical',
+	'country', 'dance', 'disco', 'electronic', 'emo', 'folk', 'french',
+	'german', 'gospel', 'goth', 'grunge', 'hip-hop', 'house', 'indie',
+	'indian', 'j-pop', 'jazz', 'k-pop', 'latin', 'metal', 'new-age',
+	'opera', 'piano', 'pop', 'punk', 'r-n-b', 'reggae', 'reggaeton',
+	'rock', 'salsa', 'singer-songwriter', 'ska', 'soul', 'spanish',
+	'synth-pop', 'tango', 'techno', 'trance', 'turkish', 'urban',
+	'vietnamese', 'world',
 ]

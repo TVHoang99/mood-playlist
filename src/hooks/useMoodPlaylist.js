@@ -27,16 +27,20 @@ export function useMoodPlaylist() {
 				return
 			}
 
-			try {
-				let tracks = []
+		try {
+			let tracks = []
 
-				if (moodConfig.recommendations) {
+			if (moodConfig.recommendations) {
+				try {
 					tracks = await getRecommendations(moodConfig.recommendations, controller.signal)
+				} catch (recErr) {
+					console.warn('[Playlist] Recommendations failed, falling back to search:', recErr)
 				}
+			}
 
-				if (tracks.length === 0 && moodConfig.query) {
-					tracks = await searchTracks(moodConfig.query, controller.signal)
-				}
+			if (tracks.length === 0 && moodConfig.query) {
+				tracks = await searchTracks(moodConfig.query, controller.signal)
+			}
 
 				if (controller.signal.aborted) return
 
