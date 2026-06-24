@@ -7,42 +7,48 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
 	const prevTrackId = useRef(null)
-	const wasPlayingRef = useRef(false)
-	const trackEndedRef = useRef(false)
 	const endTimerRef = useRef(null)
+	const trackRef = useRef(track)
+	const tracksRef = useRef(tracks)
+	const onPlayRef = useRef(onPlay)
+
+	useEffect(() => {
+		trackRef.current = track
+		tracksRef.current = tracks
+		onPlayRef.current = onPlay
+	})
 
 	const goToNextTrack = useCallback(() => {
-		if (trackEndedRef.current) return
-		trackEndedRef.current = true
-		if (!track || !tracks.length) return
-		const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
-		if (currentIndex < tracks.length - 1) {
-			onPlay(tracks[currentIndex + 1])
+		const t = trackRef.current
+		const ts = tracksRef.current
+		if (!t || !ts.length) return
+		const currentIndex = ts.findIndex((x) => x.id === t.id && x.source === t.source)
+		if (currentIndex < ts.length - 1) {
+			onPlayRef.current(ts[currentIndex + 1])
 		} else {
-			onPlay(tracks[0])
+			onPlayRef.current(ts[0])
 		}
-	}, [track, tracks, onPlay])
+	}, [])
 
 	useEffect(() => {
+		if (endTimerRef.current) clearTimeout(endTimerRef.current)
+
 		if (!track) return
+
 		if (prevTrackId.current !== track.id) {
 			prevTrackId.current = track.id
-			trackEndedRef.current = false
-			wasPlayingRef.current = false
 			setIframeKey((k) => k + 1)
 		}
-	}, [track])
 
-	useEffect(() => {
-		if (!track?.duration) return
-		if (endTimerRef.current) clearTimeout(endTimerRef.current)
+		const duration = track.duration || 180000
 		endTimerRef.current = setTimeout(() => {
 			goToNextTrack()
-		}, track.duration + 2000)
+		}, duration + 1000)
+
 		return () => {
 			if (endTimerRef.current) clearTimeout(endTimerRef.current)
 		}
-	}, [track?.id, track?.duration, goToNextTrack])
+	}, [track, goToNextTrack])
 
 	useEffect(() => {
 		if (!track || !roomId) return
@@ -60,32 +66,6 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 			onPlay(currentTrack)
 		}
 	}, [currentTrack, roomId, isHost, tracks, track, onPlay])
-
-	useEffect(() => {
-		if (!track) return
-
-		const handleMessage = (event) => {
-			if (event.origin !== 'https://open.spotify.com') return
-			try {
-				const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
-				if (data.type === 'playback_update' && data.data) {
-					const { is_playing, is_buffering } = data.data
-					if (is_playing) {
-						wasPlayingRef.current = true
-						trackEndedRef.current = false
-					}
-					if (wasPlayingRef.current && !is_playing && !is_buffering) {
-						goToNextTrack()
-					}
-				}
-			} catch {
-				// ignore
-			}
-		}
-
-		window.addEventListener('message', handleMessage)
-		return () => window.removeEventListener('message', handleMessage)
-	}, [track, goToNextTrack])
 
 	const handleKeyDown = useCallback((e) => {
 		if (e.key === 'Escape') onClose()
