@@ -1,3 +1,4 @@
+import RoomManager from './RoomManager'
 import SavedPlaylists from './SavedPlaylists'
 import SpotifyLogin from './SpotifyLogin'
 
@@ -11,6 +12,7 @@ export default function Header() {
 				<p className="text-sm text-slate-400">Pick your mood, get your music</p>
 			</div>
 			<div className="flex items-center gap-3">
+				<RoomManager />
 				<SpotifyLogin />
 				<SavedPlaylists />
 			</div>

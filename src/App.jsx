@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { PlaylistProvider } from './context/PlaylistProvider'
+import { SyncProvider } from './context/SyncContext'
+import { useSync } from './hooks/useSync'
 import { usePlaylist } from './hooks/usePlaylist'
 import { decodePlaylist } from './utils/share'
 import { useMoodPlaylist } from './hooks/useMoodPlaylist'
-import { handleCallback, isLoggedIn } from './api/spotifyAuth'
+import { handleCallback, isLoggedIn, login } from './api/spotifyAuth'
 import Header from './components/Header'
 import MoodSelector from './components/MoodSelector'
 import PlaylistView from './components/PlaylistView'
@@ -11,6 +13,7 @@ import PlaylistView from './components/PlaylistView'
 function AppContent() {
 	const { dispatch } = usePlaylist()
 	const { fetchPlaylist } = useMoodPlaylist()
+	const { joinExistingRoom } = useSync()
 	const [authReady, setAuthReady] = useState(false)
 
 	useEffect(() => {
@@ -24,6 +27,12 @@ function AppContent() {
 	useEffect(() => {
 		if (!authReady) return
 
+		const params = new URLSearchParams(window.location.search)
+		const roomParam = params.get('room')
+		if (roomParam) {
+			joinExistingRoom(roomParam)
+		}
+
 		const hash = window.location.hash.slice(1)
 		if (hash) {
 			const data = decodePlaylist(hash)
@@ -35,8 +44,10 @@ function AppContent() {
 
 		if (isLoggedIn()) {
 			fetchPlaylist('happy')
+		} else {
+			login()
 		}
-	}, [authReady, dispatch, fetchPlaylist])
+	}, [authReady, dispatch, fetchPlaylist, joinExistingRoom])
 
 	return (
 		<div className="min-h-screen">
@@ -58,7 +69,9 @@ function AppContent() {
 export default function App() {
 	return (
 		<PlaylistProvider>
-			<AppContent />
+			<SyncProvider>
+				<AppContent />
+			</SyncProvider>
 		</PlaylistProvider>
 	)
 }

@@ -1,7 +1,24 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { useSync } from '../hooks/useSync'
 
 export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const overlayRef = useRef(null)
+	const { roomId, currentTrack, playTrack: syncTrack } = useSync()
+
+	useEffect(() => {
+		if (!track) return
+		if (roomId) {
+			syncTrack(track)
+		}
+	}, [track, roomId, syncTrack])
+
+	useEffect(() => {
+		if (!roomId || !currentTrack) return
+		const exists = tracks.find((t) => t.id === currentTrack.id && t.source === currentTrack.source)
+		if (exists && (!track || track.id !== currentTrack.id)) {
+			onPlay(currentTrack)
+		}
+	}, [currentTrack, roomId, tracks, track, onPlay])
 
 	const handleKeyDown = useCallback((e) => {
 		if (e.key === 'Escape') onClose()
