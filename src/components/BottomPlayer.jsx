@@ -40,7 +40,7 @@ function loadSpotifySDK() {
 	return sdkPromise
 }
 
-export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
+export default function BottomPlayer({ track, tracks, onPlay }) {
 	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
@@ -48,35 +48,20 @@ export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 	const playerRef = useRef(null)
 	const deviceIdRef = useRef(null)
 	const [sdkReady, setSdkReady] = useState(false)
-	const nextingRef = useRef(false)
 
 	const trackRef = useRef(track)
 	const tracksRef = useRef(tracks)
 	const onPlayRef = useRef(onPlay)
-	const onTimeUpdateRef = useRef(onTimeUpdate)
 
 	useEffect(() => {
 		trackRef.current = track
 		tracksRef.current = tracks
 		onPlayRef.current = onPlay
-		onTimeUpdateRef.current = onTimeUpdate
 	})
-
-	const goToNextTrack = useCallback(() => {
-		if (nextingRef.current) return
-		nextingRef.current = true
-		const t = trackRef.current
-		const ts = tracksRef.current
-		if (!t || !ts.length) return
-		const currentIndex = ts.findIndex((x) => x.id === t.id && x.source === t.source)
-		const nextIndex = currentIndex < ts.length - 1 ? currentIndex + 1 : 0
-		onPlayRef.current(ts[nextIndex])
-	}, [])
 
 	useEffect(() => {
 		if (!isLoggedIn()) return
 		let cancelled = false
-		let pollInterval = null
 
 		loadSpotifySDK().then(() => {
 			if (cancelled || playerRef.current) return
@@ -99,22 +84,6 @@ export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 					deviceIdRef.current = device_id
 					playerRef.current = p
 					setSdkReady(true)
-
-					pollInterval = setInterval(() => {
-						p.getCurrentState().then((state) => {
-							if (!state || cancelled) return
-							if (onTimeUpdateRef.current) {
-								onTimeUpdateRef.current({
-									position: state.position,
-									duration: state.duration,
-									remaining: state.duration - state.position,
-								})
-							}
-							if (!state.paused && state.position >= state.duration - 500) {
-								goToNextTrack()
-							}
-						})
-					}, 250)
 				}
 			})
 
@@ -135,13 +104,12 @@ export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 
 		return () => {
 			cancelled = true
-			if (pollInterval) clearInterval(pollInterval)
 			if (playerRef.current) {
 				playerRef.current.disconnect()
 				playerRef.current = null
 			}
 		}
-	}, [goToNextTrack])
+	}, [])
 
 	const playOnSDK = useCallback(async (trackId) => {
 		if (!deviceIdRef.current || !playerRef.current) return false
@@ -172,7 +140,6 @@ export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 
 		if (prevTrackId.current !== track.id) {
 			prevTrackId.current = track.id
-			nextingRef.current = false
 			setIframeKey((k) => k + 1)
 
 			if (sdkReady && track.source === 'spotify') {
