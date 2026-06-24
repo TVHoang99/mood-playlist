@@ -1,27 +1,22 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePlaylist } from '../hooks/usePlaylist'
 import { isLoggedIn } from '../api/spotifyAuth'
 import { shuffle } from '../utils/shuffle'
 import { MOODS } from '../utils/moodConfig'
 import TrackCard from './TrackCard'
 import ShareButton from './ShareButton'
-import PlayerModal from './PlayerModal'
+import BottomPlayer from './BottomPlayer'
 
 export default function PlaylistView() {
 	const { state, dispatch } = usePlaylist()
 	const [saved, setSaved] = useState(false)
 	const [activeTrack, setActiveTrack] = useState(null)
-	const [playbackInfo, setPlaybackInfo] = useState({ position: 0, duration: 0, remaining: 0 })
 	const savedTimerRef = useRef(null)
 
 	useEffect(() => {
 		return () => {
 			if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
 		}
-	}, [])
-
-	const handleTimeUpdate = useCallback((info) => {
-		setPlaybackInfo(info)
 	}, [])
 
 	if (state.loading) {
@@ -67,7 +62,7 @@ export default function PlaylistView() {
 	}
 
 	return (
-		<div className="max-w-2xl mx-auto">
+		<div className="max-w-2xl mx-auto pb-24">
 			<div className="flex items-center justify-between mb-4">
 				<h2 className={`text-xl font-bold ${mood?.accent || 'text-white'}`}>
 					{mood?.icon} {mood?.label} Playlist
@@ -99,17 +94,14 @@ export default function PlaylistView() {
 						track={track}
 						isActive={activeTrack?.id === track.id && activeTrack?.source === track.source}
 						onPlay={setActiveTrack}
-						remainingTime={activeTrack?.id === track.id ? playbackInfo.remaining : null}
 					/>
 				))}
 			</div>
 
-			<PlayerModal
+			<BottomPlayer
 				track={activeTrack}
 				tracks={state.tracks}
-				onClose={() => { setActiveTrack(null); setPlaybackInfo({ position: 0, duration: 0, remaining: 0 }) }}
 				onPlay={setActiveTrack}
-				onTimeUpdate={handleTimeUpdate}
 			/>
 		</div>
 	)
