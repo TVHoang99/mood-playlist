@@ -3,7 +3,7 @@ import { useSync } from '../hooks/useSync'
 
 export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const overlayRef = useRef(null)
-	const { roomId, currentTrack, playTrack: syncTrack } = useSync()
+	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
 
 	useEffect(() => {
 		if (!track) return
@@ -32,6 +32,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 
 	if (!track) return null
 
+	const showControls = !roomId || isHost
 	const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
 	const prevTrack = currentIndex > 0 ? tracks[currentIndex - 1] : null
 	const nextTrack = currentIndex < tracks.length - 1 ? tracks[currentIndex + 1] : null
@@ -68,25 +69,33 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 						<p className="text-white font-semibold truncate">{track.title}</p>
 						<p className="text-slate-400 text-sm truncate">{track.artist}</p>
 
-						<div className="flex items-center justify-between mt-4">
-							<button
-								onClick={() => prevTrack && onPlay(prevTrack)}
-								disabled={!prevTrack}
-								className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-							>
-								← Prev
-							</button>
-							<span className="text-slate-500 text-sm">
-								{tracks.length > 0 ? `${currentIndex + 1} / ${tracks.length}` : '0 / 0'}
-							</span>
-							<button
-								onClick={() => nextTrack && onPlay(nextTrack)}
-								disabled={!nextTrack}
-								className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-							>
-								Next →
-							</button>
-						</div>
+						{showControls ? (
+							<div className="flex items-center justify-between mt-4">
+								<button
+									onClick={() => prevTrack && onPlay(prevTrack)}
+									disabled={!prevTrack}
+									className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+								>
+									← Prev
+								</button>
+								<span className="text-slate-500 text-sm">
+									{tracks.length > 0 ? `${currentIndex + 1} / ${tracks.length}` : '0 / 0'}
+								</span>
+								<button
+									onClick={() => nextTrack && onPlay(nextTrack)}
+									disabled={!nextTrack}
+									className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+								>
+									Next →
+								</button>
+							</div>
+						) : (
+							<div className="mt-4 text-center">
+								<p className="text-slate-500 text-xs">
+									🔒 Host controls playback
+								</p>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

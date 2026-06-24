@@ -4,6 +4,7 @@ import { createRoom as fbCreateRoom, joinRoom as fbJoinRoom, setTrack as fbSetTr
 
 export function SyncProvider({ children }) {
 	const [roomId, setRoomId] = useState(null)
+	const [isHost, setIsHost] = useState(false)
 	const [currentTrack, setCurrentTrack] = useState(null)
 	const [remoteTracks, setRemoteTracks] = useState([])
 	const [remoteMood, setRemoteMood] = useState(null)
@@ -19,6 +20,7 @@ export function SyncProvider({ children }) {
 	const createNewRoom = useCallback(() => {
 		const id = fbCreateRoom()
 		setRoomId(id)
+		setIsHost(true)
 
 		if (unsubRef.current) unsubRef.current()
 		unsubRef.current = fbJoinRoom(id, (data) => {
@@ -33,6 +35,7 @@ export function SyncProvider({ children }) {
 
 	const joinExistingRoom = useCallback((id) => {
 		setRoomId(id)
+		setIsHost(false)
 
 		if (unsubRef.current) unsubRef.current()
 		unsubRef.current = fbJoinRoom(id, (data) => {
@@ -63,6 +66,7 @@ export function SyncProvider({ children }) {
 		}
 		if (roomId) fbLeaveRoom(roomId)
 		setRoomId(null)
+		setIsHost(false)
 		setCurrentTrack(null)
 		setRemoteTracks([])
 		setRemoteMood(null)
@@ -71,6 +75,7 @@ export function SyncProvider({ children }) {
 	return (
 		<SyncContext.Provider value={{
 			roomId,
+			isHost,
 			currentTrack,
 			remoteTracks,
 			remoteMood,
