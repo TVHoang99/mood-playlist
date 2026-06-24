@@ -105,7 +105,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 						<iframe
 							key={iframeKey}
 							className="w-full rounded-lg"
-							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
+							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0&autoplay=1`}
 							height="352"
 							frameBorder="0"
 							allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
