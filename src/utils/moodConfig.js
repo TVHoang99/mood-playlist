@@ -32,7 +32,7 @@ export const MOODS = {
 	relax: {
 		label: 'Relax',
 		icon: '🌊',
-		query: 'EDM tiktok',
+		query: 'CS2 Music Kits',
 		gradient: 'from-teal-400 to-cyan-500',
 		bg: 'bg-teal-500/10',
 		accent: 'text-teal-400',
