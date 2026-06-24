@@ -30,7 +30,7 @@ export default function RoomManager() {
 					onClick={handleCopyRoomId}
 					className="px-3 py-1.5 text-xs rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
 				>
-					Copy Room ID
+					Copy ID
 				</button>
 				<button
 					onClick={leaveCurrentRoom}
