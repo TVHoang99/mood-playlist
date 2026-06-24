@@ -99,6 +99,7 @@ export default function PlaylistView() {
 			</div>
 
 			<BottomPlayer
+				key={state.activeMood}
 				track={activeTrack}
 				onPlay={setActiveTrack}
 			/>
