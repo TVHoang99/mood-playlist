@@ -56,6 +56,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpda
 	const trackRef = useRef(track)
 	const tracksRef = useRef(tracks)
 	const onPlayRef = useRef(onPlay)
+	const nextingRef = useRef(false)
 
 	useEffect(() => {
 		trackRef.current = track
@@ -64,6 +65,8 @@ export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpda
 	})
 
 	const goToNextTrack = useCallback(() => {
+		if (nextingRef.current) return
+		nextingRef.current = true
 		const t = trackRef.current
 		const ts = tracksRef.current
 		if (!t || !ts.length) return
@@ -174,6 +177,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpda
 
 		if (prevTrackId.current !== track.id) {
 			prevTrackId.current = track.id
+			nextingRef.current = false
 			setIframeKey((k) => k + 1)
 		}
 
