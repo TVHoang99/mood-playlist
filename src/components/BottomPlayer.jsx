@@ -3,6 +3,7 @@ import { useSync } from '../hooks/useSync'
 
 export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
+	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
 	const prevTrackId = useRef(null)
 	const nextingRef = useRef(false)
@@ -41,6 +42,7 @@ export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 		if (prevTrackId.current !== track.id) {
 			prevTrackId.current = track.id
 			nextingRef.current = false
+			setIframeKey((k) => k + 1)
 		}
 
 		let position = 0
@@ -117,6 +119,16 @@ export default function BottomPlayer({ track, tracks, onPlay, onTimeUpdate }) {
 						<span className="text-[10px] text-slate-500 w-10">-{formatTime(dur - pos)}</span>
 					</div>
 				</div>
+
+				<iframe
+					key={iframeKey}
+					className="w-full rounded-xl mt-2"
+					src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0&autoplay=1`}
+					height="80"
+					frameBorder="0"
+					allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+					loading="lazy"
+				/>
 			</div>
 		</div>
 	)
