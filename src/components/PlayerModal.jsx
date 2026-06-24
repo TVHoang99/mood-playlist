@@ -9,6 +9,19 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const prevTrackId = useRef(null)
 	const wasPlayingRef = useRef(false)
 	const trackEndedRef = useRef(false)
+	const endTimerRef = useRef(null)
+
+	const goToNextTrack = useCallback(() => {
+		if (trackEndedRef.current) return
+		trackEndedRef.current = true
+		if (!track || !tracks.length) return
+		const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
+		if (currentIndex < tracks.length - 1) {
+			onPlay(tracks[currentIndex + 1])
+		} else {
+			onPlay(tracks[0])
+		}
+	}, [track, tracks, onPlay])
 
 	useEffect(() => {
 		if (!track) return
@@ -19,6 +32,17 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 			setIframeKey((k) => k + 1)
 		}
 	}, [track])
+
+	useEffect(() => {
+		if (!track?.duration) return
+		if (endTimerRef.current) clearTimeout(endTimerRef.current)
+		endTimerRef.current = setTimeout(() => {
+			goToNextTrack()
+		}, track.duration + 2000)
+		return () => {
+			if (endTimerRef.current) clearTimeout(endTimerRef.current)
+		}
+	}, [track?.id, track?.duration, goToNextTrack])
 
 	useEffect(() => {
 		if (!track || !roomId) return
@@ -37,18 +61,6 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 		}
 	}, [currentTrack, roomId, isHost, tracks, track, onPlay])
 
-	const handleTrackEnd = useCallback(() => {
-		if (trackEndedRef.current) return
-		trackEndedRef.current = true
-		if (!track || !tracks.length) return
-		const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
-		if (currentIndex < tracks.length - 1) {
-			onPlay(tracks[currentIndex + 1])
-		} else {
-			onPlay(tracks[0])
-		}
-	}, [track, tracks, onPlay])
-
 	useEffect(() => {
 		if (!track) return
 
@@ -63,7 +75,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 						trackEndedRef.current = false
 					}
 					if (wasPlayingRef.current && !is_playing && !is_buffering) {
-						handleTrackEnd()
+						goToNextTrack()
 					}
 				}
 			} catch {
@@ -73,7 +85,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 
 		window.addEventListener('message', handleMessage)
 		return () => window.removeEventListener('message', handleMessage)
-	}, [track, handleTrackEnd])
+	}, [track, goToNextTrack])
 
 	const handleKeyDown = useCallback((e) => {
 		if (e.key === 'Escape') onClose()
@@ -113,7 +125,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 						<iframe
 							key={iframeKey}
 							className="w-full rounded-lg"
-							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0&autoplay=1`}
+							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
 							height="352"
 							frameBorder="0"
 							allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"

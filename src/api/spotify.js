@@ -41,6 +41,7 @@ export async function searchTracks(query, signal) {
 		artist: t.artists.map((a) => a.name).join(', '),
 		url: t.external_urls.spotify,
 		thumbnail: t.album.images[0]?.url || '',
+		duration: t.duration_ms,
 		source: 'spotify',
 	}))
 }
