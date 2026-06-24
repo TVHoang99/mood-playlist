@@ -42,7 +42,7 @@ export default function BottomPlayer({ track, tracks, onPlay }) {
 					key={iframeKey}
 					className="w-full rounded-xl shadow-2xl"
 					src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
-					height="152"
+					height="80"
 					frameBorder="0"
 					allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
 					loading="lazy"
