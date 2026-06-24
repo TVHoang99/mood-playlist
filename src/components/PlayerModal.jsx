@@ -7,6 +7,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
 	const prevTrackId = useRef(null)
+	const iframeRef = useRef(null)
 
 	useEffect(() => {
 		if (!track) return
@@ -32,6 +33,38 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 			onPlay(currentTrack)
 		}
 	}, [currentTrack, roomId, isHost, tracks, track, onPlay])
+
+	const handleTrackEnd = useCallback(() => {
+		if (!track || !tracks.length) return
+		const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
+		if (currentIndex < tracks.length - 1) {
+			onPlay(tracks[currentIndex + 1])
+		} else {
+			onPlay(tracks[0])
+		}
+	}, [track, tracks, onPlay])
+
+	useEffect(() => {
+		if (!track) return
+
+		const handleMessage = (event) => {
+			if (event.origin !== 'https://open.spotify.com') return
+			try {
+				const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
+				if (data.type === 'playback_update' && data.data) {
+					const { is_playing, position, duration } = data.data
+					if (!is_playing && duration > 0 && position >= duration - 1000) {
+						handleTrackEnd()
+					}
+				}
+			} catch {
+				// ignore parse errors
+			}
+		}
+
+		window.addEventListener('message', handleMessage)
+		return () => window.removeEventListener('message', handleMessage)
+	}, [track, handleTrackEnd])
 
 	const handleKeyDown = useCallback((e) => {
 		if (e.key === 'Escape') onClose()
@@ -70,6 +103,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 					<div className="p-4">
 						<iframe
 							key={iframeKey}
+							ref={iframeRef}
 							className="w-full rounded-lg"
 							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
 							height="352"
