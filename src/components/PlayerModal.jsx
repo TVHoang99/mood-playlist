@@ -46,10 +46,12 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
 	const prevTrackId = useRef(null)
-	const endTimerRef = useRef(null)
 	const playerRef = useRef(null)
 	const deviceIdRef = useRef(null)
 	const [sdkReady, setSdkReady] = useState(false)
+	const [isPlaying, setIsPlaying] = useState(false)
+	const [position, setPosition] = useState(0)
+	const [duration, setDuration] = useState(0)
 
 	const trackRef = useRef(track)
 	const tracksRef = useRef(tracks)
@@ -60,6 +62,15 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 		tracksRef.current = tracks
 		onPlayRef.current = onPlay
 	})
+
+	const goToNextTrack = useCallback(() => {
+		const t = trackRef.current
+		const ts = tracksRef.current
+		if (!t || !ts.length) return
+		const currentIndex = ts.findIndex((x) => x.id === t.id && x.source === t.source)
+		const nextIndex = currentIndex < ts.length - 1 ? currentIndex + 1 : 0
+		onPlayRef.current(ts[nextIndex])
+	}, [])
 
 	useEffect(() => {
 		if (!isLoggedIn()) return
@@ -89,7 +100,16 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 				}
 			})
 
-			p.addListener('player_state_changed', () => {})
+			p.addListener('player_state_changed', (state) => {
+				if (!state || cancelled) return
+				setIsPlaying(!state.paused)
+				setPosition(state.position)
+				setDuration(state.duration)
+
+				if (!state.paused && state.position >= state.duration - 500) {
+					goToNextTrack()
+				}
+			})
 
 			p.connect()
 		}).catch(() => {})
@@ -101,7 +121,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 				playerRef.current = null
 			}
 		}
-	}, [])
+	}, [goToNextTrack])
 
 	const playOnSDK = useCallback(async (trackId) => {
 		if (!deviceIdRef.current || !playerRef.current) return false
@@ -127,22 +147,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 		}
 	}, [])
 
-	const goToNextTrack = useCallback(() => {
-		const t = trackRef.current
-		const ts = tracksRef.current
-		if (!t || !ts.length) return
-		const currentIndex = ts.findIndex((x) => x.id === t.id && x.source === t.source)
-		const nextIndex = currentIndex < ts.length - 1 ? currentIndex + 1 : 0
-		const next = ts[nextIndex]
-		onPlayRef.current(next)
-		if (sdkReady && next.source === 'spotify') {
-			playOnSDK(next.id)
-		}
-	}, [sdkReady, playOnSDK])
-
 	useEffect(() => {
-		if (endTimerRef.current) clearTimeout(endTimerRef.current)
-
 		if (!track) return
 
 		if (prevTrackId.current !== track.id) {
@@ -153,16 +158,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 		if (sdkReady && track.source === 'spotify') {
 			playOnSDK(track.id)
 		}
-
-		const duration = track.duration || 180000
-		endTimerRef.current = setTimeout(() => {
-			goToNextTrack()
-		}, duration + 1000)
-
-		return () => {
-			if (endTimerRef.current) clearTimeout(endTimerRef.current)
-		}
-	}, [track, goToNextTrack, sdkReady, playOnSDK])
+	}, [track, sdkReady, playOnSDK])
 
 	useEffect(() => {
 		if (!track || !roomId) return
@@ -199,8 +195,14 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const showControls = !roomId || isHost
 	const useSDK = sdkReady && track.source === 'spotify'
 	const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
-	const prevTrack = currentIndex > 0 ? tracks[currentIndex - 1] : null
-	const nextTrack = currentIndex < tracks.length - 1 ? tracks[currentIndex + 1] : null
+	const prevTrackItem = currentIndex > 0 ? tracks[currentIndex - 1] : null
+	const nextTrackItem = currentIndex < tracks.length - 1 ? tracks[currentIndex + 1] : null
+
+	const formatTime = (ms) => {
+		const minutes = Math.floor(ms / 60000)
+		const seconds = Math.floor((ms % 60000) / 1000)
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`
+	}
 
 	return (
 		<div
@@ -230,7 +232,21 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 								<p className="text-white font-semibold text-lg">{track.title}</p>
 								<p className="text-slate-400 text-sm">{track.artist}</p>
 							</div>
-							<p className="text-green-400 text-xs">Playing via Spotify Premium</p>
+							<div className="w-full max-w-xs">
+								<div className="flex justify-between text-xs text-slate-500 mb-1">
+									<span>{formatTime(position)}</span>
+									<span>{formatTime(duration)}</span>
+								</div>
+								<div className="w-full h-1 bg-slate-700 rounded-full">
+									<div
+										className="h-full bg-green-500 rounded-full transition-all"
+										style={{ width: duration > 0 ? `${(position / duration) * 100}%` : '0%' }}
+									/>
+								</div>
+							</div>
+							<p className="text-green-400 text-xs">
+								{isPlaying ? '▶ Playing' : '⏸ Paused'}
+							</p>
 						</div>
 					) : (
 						<div className="p-4">
@@ -253,8 +269,8 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 						{showControls ? (
 							<div className="flex items-center justify-between mt-4">
 								<button
-									onClick={() => prevTrack && onPlay(prevTrack)}
-									disabled={!prevTrack}
+									onClick={() => prevTrackItem && onPlay(prevTrackItem)}
+									disabled={!prevTrackItem}
 									className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
 								>
 									← Prev
@@ -263,8 +279,8 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 									{tracks.length > 0 ? `${currentIndex + 1} / ${tracks.length}` : '0 / 0'}
 								</span>
 								<button
-									onClick={() => nextTrack && onPlay(nextTrack)}
-									disabled={!nextTrack}
+									onClick={() => nextTrackItem && onPlay(nextTrackItem)}
+									disabled={!nextTrackItem}
 									className="px-4 py-2 text-sm rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
 								>
 									Next →
