@@ -71,51 +71,38 @@ export default function BottomPlayer({ track, tracks, onPlay }) {
 	const showControls = !roomId || isHost
 
 	return (
-		<div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-700">
+		<div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-slate-900 via-slate-900 to-transparent pt-8 pb-2">
 			<div className="max-w-4xl mx-auto px-4">
-				<div className="flex items-center gap-4 py-3">
-					<img
-						src={track.thumbnail}
-						alt={track.title}
-						className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-					/>
-
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-white truncate">{track.title}</p>
-						<p className="text-xs text-slate-400 truncate">{track.artist}</p>
+				{showControls && (
+					<div className="flex items-center justify-center gap-4 mb-2">
+						<button
+							onClick={goToPrevTrack}
+							className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+						>
+							<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+								<path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+							</svg>
+						</button>
+						<button
+							onClick={goToNextTrack}
+							className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white"
+						>
+							<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+								<path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+							</svg>
+						</button>
 					</div>
+				)}
 
-					{showControls ? (
-						<div className="flex items-center gap-2">
-							<button
-								onClick={goToPrevTrack}
-								className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white text-sm"
-							>
-								◀
-							</button>
-							<button
-								onClick={goToNextTrack}
-								className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer text-white text-sm"
-							>
-								▶▶
-							</button>
-						</div>
-					) : (
-						<span className="text-xs text-slate-500">🔒</span>
-					)}
-				</div>
-
-				<div className="pb-3">
-					<iframe
-						key={iframeKey}
-						className="w-full rounded-lg"
-						src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
-						height="80"
-						frameBorder="0"
-						allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-						loading="lazy"
-					/>
-				</div>
+				<iframe
+					key={iframeKey}
+					className="w-full rounded-xl shadow-2xl"
+					src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
+					height="152"
+					frameBorder="0"
+					allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+					loading="lazy"
+				/>
 			</div>
 		</div>
 	)
