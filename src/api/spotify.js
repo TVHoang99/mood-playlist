@@ -97,3 +97,74 @@ export async function getRecommendations(recommendations, signal) {
 		source: 'spotify',
 	}))
 }
+
+export async function getUserProfile() {
+	const token = await getAccessToken()
+	const res = await fetch(`${SPOTIFY_API_URL}/me`, {
+		headers: { Authorization: `Bearer ${token}` },
+	})
+	if (!res.ok) {
+		const text = await res.text()
+		throw new Error(text || `Spotify API error: ${res.status}`)
+	}
+	return res.json()
+}
+
+export async function createSpotifyPlaylist(userId, name, description) {
+	const token = await getAccessToken()
+	const res = await fetch(`${SPOTIFY_API_URL}/users/${userId}/playlists`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			name,
+			description,
+			public: false,
+		}),
+	})
+	if (!res.ok) {
+		const text = await res.text()
+		throw new Error(text || `Spotify API error: ${res.status}`)
+	}
+	return res.json()
+}
+
+export async function addTracksToPlaylist(playlistId, trackUris) {
+	const token = await getAccessToken()
+	const res = await fetch(`${SPOTIFY_API_URL}/playlists/${playlistId}/tracks`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			uris: trackUris,
+		}),
+	})
+	if (!res.ok) {
+		const text = await res.text()
+		throw new Error(text || `Spotify API error: ${res.status}`)
+	}
+	return res.json()
+}
+
+export async function exportPlaylistToSpotify(name, tracks) {
+	const profile = await getUserProfile()
+	const playlist = await createSpotifyPlaylist(
+		profile.id,
+		name,
+		`Created with Mood Playlist - ${new Date().toLocaleDateString()}`
+	)
+
+	const trackUris = tracks
+		.filter((t) => t.source === 'spotify' && t.id)
+		.map((t) => `spotify:track:${t.id}`)
+
+	if (trackUris.length > 0) {
+		await addTracksToPlaylist(playlist.id, trackUris)
+	}
+
+	return playlist
+}

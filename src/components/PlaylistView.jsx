@@ -7,6 +7,7 @@ import TrackCard from './TrackCard'
 import ShareButton from './ShareButton'
 import BottomPlayer from './BottomPlayer'
 import PlayerModal from './PlayerModal'
+import ExportToSpotify from './ExportToSpotify'
 
 export default function PlaylistView() {
 	const { state, dispatch } = usePlaylist()
@@ -112,6 +113,10 @@ export default function PlaylistView() {
 					>
 						{saved ? '✓ Saved' : '💾 Save'}
 					</button>
+					<ExportToSpotify
+						name={`${mood?.label || 'Mood'} Vibes - ${new Date().toLocaleDateString()}`}
+						tracks={state.tracks}
+					/>
 					<ShareButton playlist={{ mood: state.activeMood, tracks: state.tracks }} />
 				</div>
 			</div>
