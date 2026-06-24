@@ -50,6 +50,26 @@ export default function BottomPlayer({ track, onPlay }) {
 	const playerRef = useRef(null)
 	const deviceIdRef = useRef(null)
 	const [useSDK, setUseSDK] = useState(false)
+	const [position, setPosition] = useState(0)
+	const [duration, setDuration] = useState(0)
+	const pollRef = useRef(null)
+	const nextingRef = useRef(false)
+
+	const trackRef = useRef(track)
+	const onPlayRef = useRef(onPlay)
+
+	useEffect(() => {
+		trackRef.current = track
+		onPlayRef.current = onPlay
+	})
+
+	const goToNextTrack = useCallback(() => {
+		if (nextingRef.current) return
+		nextingRef.current = true
+		const t = trackRef.current
+		if (!t) return
+		onPlayRef.current(t)
+	}, [])
 
 	useEffect(() => {
 		if (!isLoggedIn() || sdkFailed) return
@@ -76,6 +96,17 @@ export default function BottomPlayer({ track, onPlay }) {
 					deviceIdRef.current = device_id
 					playerRef.current = p
 					setUseSDK(true)
+
+					pollRef.current = setInterval(() => {
+						p.getCurrentState().then((state) => {
+							if (!state || cancelled) return
+							setPosition(state.position)
+							setDuration(state.duration)
+							if (!state.paused && state.position >= state.duration - 500) {
+								goToNextTrack()
+							}
+						})
+					}, 250)
 				}
 			})
 
@@ -96,12 +127,13 @@ export default function BottomPlayer({ track, onPlay }) {
 
 		return () => {
 			cancelled = true
+			if (pollRef.current) clearInterval(pollRef.current)
 			if (playerRef.current) {
 				playerRef.current.disconnect()
 				playerRef.current = null
 			}
 		}
-	}, [])
+	}, [goToNextTrack])
 
 	const playOnSDK = useCallback(async (trackId) => {
 		if (!deviceIdRef.current || !playerRef.current) return false
@@ -132,6 +164,7 @@ export default function BottomPlayer({ track, onPlay }) {
 
 		if (prevTrackId.current !== track.id) {
 			prevTrackId.current = track.id
+			nextingRef.current = false
 			setIframeKey((k) => k + 1)
 
 			if (useSDK && track.source === 'spotify') {
@@ -160,6 +193,13 @@ export default function BottomPlayer({ track, onPlay }) {
 
 	if (!track) return null
 
+	const formatTime = (ms) => {
+		if (!ms || ms <= 0) return '0:00'
+		const minutes = Math.floor(ms / 60000)
+		const seconds = Math.floor((ms % 60000) / 1000)
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`
+	}
+
 	if (useSDK) {
 		return (
 			<div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-slate-950 via-slate-950/98 to-transparent">
@@ -175,6 +215,16 @@ export default function BottomPlayer({ track, onPlay }) {
 								<p className="text-sm font-medium text-white truncate">{track.title}</p>
 								<p className="text-xs text-slate-400 truncate">{track.artist}</p>
 							</div>
+						</div>
+						<div className="mt-2 flex items-center gap-2">
+							<span className="text-[10px] text-slate-500 w-10 text-right">{formatTime(position)}</span>
+							<div className="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden">
+								<div
+									className="h-full bg-green-500 rounded-full transition-none"
+									style={{ width: duration > 0 ? `${(position / duration) * 100}%` : '0%' }}
+								/>
+							</div>
+							<span className="text-[10px] text-slate-500 w-10">-{formatTime(duration - position)}</span>
 						</div>
 					</div>
 				</div>
