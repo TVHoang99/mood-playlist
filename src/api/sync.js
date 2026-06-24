@@ -28,7 +28,7 @@ export function registerPresence(roomId) {
 
 	return () => {
 		unsubConnected()
-		try { myRef.remove() } catch (e) {}
+		set(myRef, null)
 	}
 }
 
