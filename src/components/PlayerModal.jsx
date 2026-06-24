@@ -75,6 +75,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpda
 	useEffect(() => {
 		if (!isLoggedIn()) return
 		let cancelled = false
+		let pollInterval = null
 
 		loadSpotifySDK().then(() => {
 			if (cancelled || playerRef.current) return
@@ -97,25 +98,25 @@ export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpda
 					deviceIdRef.current = device_id
 					playerRef.current = p
 					setSdkReady(true)
-				}
-			})
 
-			p.addListener('player_state_changed', (state) => {
-				if (!state || cancelled) return
-				setIsPlaying(!state.paused)
-				setPosition(state.position)
-				setDuration(state.duration)
-
-				if (onTimeUpdate) {
-					onTimeUpdate({
-						position: state.position,
-						duration: state.duration,
-						remaining: state.duration - state.position,
-					})
-				}
-
-				if (!state.paused && state.position >= state.duration - 500) {
-					goToNextTrack()
+					pollInterval = setInterval(() => {
+						p.getCurrentState().then((state) => {
+							if (!state || cancelled) return
+							setIsPlaying(!state.paused)
+							setPosition(state.position)
+							setDuration(state.duration)
+							if (onTimeUpdate) {
+								onTimeUpdate({
+									position: state.position,
+									duration: state.duration,
+									remaining: state.duration - state.position,
+								})
+							}
+							if (!state.paused && state.position >= state.duration - 500) {
+								goToNextTrack()
+							}
+						})
+					}, 250)
 				}
 			})
 
@@ -124,6 +125,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpda
 
 		return () => {
 			cancelled = true
+			if (pollInterval) clearInterval(pollInterval)
 			if (playerRef.current) {
 				playerRef.current.disconnect()
 				playerRef.current = null
