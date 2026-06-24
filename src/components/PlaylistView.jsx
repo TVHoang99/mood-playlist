@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePlaylist } from '../hooks/usePlaylist'
 import { isLoggedIn } from '../api/spotifyAuth'
 import { shuffle } from '../utils/shuffle'
@@ -11,12 +11,17 @@ export default function PlaylistView() {
 	const { state, dispatch } = usePlaylist()
 	const [saved, setSaved] = useState(false)
 	const [activeTrack, setActiveTrack] = useState(null)
+	const [playbackInfo, setPlaybackInfo] = useState({ remaining: 0 })
 	const savedTimerRef = useRef(null)
 
 	useEffect(() => {
 		return () => {
 			if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
 		}
+	}, [])
+
+	const handleTimeUpdate = useCallback((info) => {
+		setPlaybackInfo(info)
 	}, [])
 
 	if (state.loading) {
@@ -94,6 +99,7 @@ export default function PlaylistView() {
 						track={track}
 						isActive={activeTrack?.id === track.id && activeTrack?.source === track.source}
 						onPlay={setActiveTrack}
+						remainingTime={activeTrack?.id === track.id ? playbackInfo.remaining : null}
 					/>
 				))}
 			</div>
@@ -102,6 +108,7 @@ export default function PlaylistView() {
 				track={activeTrack}
 				tracks={state.tracks}
 				onPlay={setActiveTrack}
+				onTimeUpdate={handleTimeUpdate}
 			/>
 		</div>
 	)
