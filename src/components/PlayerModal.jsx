@@ -40,7 +40,7 @@ function loadSpotifySDK() {
 	return sdkPromise
 }
 
-export default function PlayerModal({ track, tracks, onClose, onPlay }) {
+export default function PlayerModal({ track, tracks, onClose, onPlay, onTimeUpdate }) {
 	const overlayRef = useRef(null)
 	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
 	const [iframeKey, setIframeKey] = useState(0)
@@ -106,6 +106,14 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 				setPosition(state.position)
 				setDuration(state.duration)
 
+				if (onTimeUpdate) {
+					onTimeUpdate({
+						position: state.position,
+						duration: state.duration,
+						remaining: state.duration - state.position,
+					})
+				}
+
 				if (!state.paused && state.position >= state.duration - 500) {
 					goToNextTrack()
 				}
@@ -121,7 +129,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 				playerRef.current = null
 			}
 		}
-	}, [goToNextTrack])
+	}, [goToNextTrack, onTimeUpdate])
 
 	const playOnSDK = useCallback(async (trackId) => {
 		if (!deviceIdRef.current || !playerRef.current) return false

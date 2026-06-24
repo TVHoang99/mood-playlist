@@ -1,4 +1,13 @@
-export default function TrackCard({ track, isActive, onPlay }) {
+export default function TrackCard({ track, isActive, onPlay, remainingTime }) {
+	const formatTime = (ms) => {
+		if (!ms || ms <= 0) return null
+		const minutes = Math.floor(ms / 60000)
+		const seconds = Math.floor((ms % 60000) / 1000)
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`
+	}
+
+	const timeDisplay = formatTime(remainingTime)
+
 	return (
 		<button
 			onClick={() => onPlay(track)}
@@ -21,9 +30,15 @@ export default function TrackCard({ track, isActive, onPlay }) {
 				</p>
 				<p className="text-xs text-slate-400 truncate">{track.artist}</p>
 			</div>
-			<span className="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 bg-green-500/20 text-green-400">
-				Spotify
-			</span>
+			{isActive && timeDisplay ? (
+				<span className="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 text-green-400">
+					{timeDisplay}
+				</span>
+			) : (
+				<span className="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 bg-green-500/20 text-green-400">
+					Spotify
+				</span>
+			)}
 		</button>
 	)
 }

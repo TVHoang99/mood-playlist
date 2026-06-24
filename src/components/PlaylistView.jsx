@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePlaylist } from '../hooks/usePlaylist'
 import { isLoggedIn } from '../api/spotifyAuth'
 import { shuffle } from '../utils/shuffle'
@@ -11,12 +11,17 @@ export default function PlaylistView() {
 	const { state, dispatch } = usePlaylist()
 	const [saved, setSaved] = useState(false)
 	const [activeTrack, setActiveTrack] = useState(null)
+	const [playbackInfo, setPlaybackInfo] = useState({ position: 0, duration: 0, remaining: 0 })
 	const savedTimerRef = useRef(null)
 
 	useEffect(() => {
 		return () => {
 			if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
 		}
+	}, [])
+
+	const handleTimeUpdate = useCallback((info) => {
+		setPlaybackInfo(info)
 	}, [])
 
 	if (state.loading) {
@@ -94,6 +99,7 @@ export default function PlaylistView() {
 						track={track}
 						isActive={activeTrack?.id === track.id && activeTrack?.source === track.source}
 						onPlay={setActiveTrack}
+						remainingTime={activeTrack?.id === track.id ? playbackInfo.remaining : null}
 					/>
 				))}
 			</div>
@@ -101,8 +107,9 @@ export default function PlaylistView() {
 			<PlayerModal
 				track={activeTrack}
 				tracks={state.tracks}
-				onClose={() => setActiveTrack(null)}
+				onClose={() => { setActiveTrack(null); setPlaybackInfo({ position: 0, duration: 0, remaining: 0 }) }}
 				onPlay={setActiveTrack}
+				onTimeUpdate={handleTimeUpdate}
 			/>
 		</div>
 	)
