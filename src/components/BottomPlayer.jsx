@@ -5,6 +5,29 @@ import { isLoggedIn, getAccessToken, refreshToken } from '../api/spotifyAuth'
 let sdkLoaded = false
 let sdkPromise = null
 let sdkFailed = false
+let hasPremium = null
+
+async function checkPremium() {
+	if (hasPremium !== null) return hasPremium
+	try {
+		let token = getAccessToken()
+		if (!isLoggedIn()) {
+			await refreshToken()
+			token = getAccessToken()
+		}
+		if (!token) return false
+
+		const res = await fetch('https://api.spotify.com/v1/me', {
+			headers: { Authorization: `Bearer ${token}` },
+		})
+		const data = await res.json()
+		hasPremium = data.product === 'premium'
+		return hasPremium
+	} catch {
+		hasPremium = false
+		return false
+	}
+}
 
 function loadSpotifySDK() {
 	if (sdkFailed) return Promise.reject(new Error('SDK failed'))
@@ -50,13 +73,13 @@ export default function BottomPlayer({ track, onPlay }) {
 	const playerRef = useRef(null)
 	const deviceIdRef = useRef(null)
 	const [sdkReady, setSdkReady] = useState(false)
+	const [userPremium, setUserPremium] = useState(false)
 
-	useEffect(() => {
-		if (!isLoggedIn() || sdkFailed) return
-		let cancelled = false
+	const initSDK = useCallback(() => {
+		if (sdkFailed) return
 
 		loadSpotifySDK().then(() => {
-			if (cancelled || playerRef.current) return
+			if (playerRef.current) return
 
 			const p = new window.Spotify.Player({
 				name: 'Mood Playlist',
@@ -72,11 +95,9 @@ export default function BottomPlayer({ track, onPlay }) {
 			})
 
 			p.addListener('ready', ({ device_id }) => {
-				if (!cancelled) {
-					deviceIdRef.current = device_id
-					playerRef.current = p
-					setSdkReady(true)
-				}
+				deviceIdRef.current = device_id
+				playerRef.current = p
+				setSdkReady(true)
 			})
 
 			p.addListener('authentication_error', () => {
@@ -91,15 +112,17 @@ export default function BottomPlayer({ track, onPlay }) {
 		}).catch(() => {
 			sdkFailed = true
 		})
-
-		return () => {
-			cancelled = true
-			if (playerRef.current) {
-				playerRef.current.disconnect()
-				playerRef.current = null
-			}
-		}
 	}, [])
+
+	useEffect(() => {
+		if (!isLoggedIn()) return
+		checkPremium().then((premium) => {
+			setUserPremium(premium)
+			if (premium && !sdkFailed) {
+				initSDK()
+			}
+		})
+	}, [initSDK])
 
 	const playOnSDK = useCallback(async (trackId) => {
 		if (!deviceIdRef.current || !playerRef.current) return false
@@ -158,18 +181,37 @@ export default function BottomPlayer({ track, onPlay }) {
 
 	if (!track) return null
 
+	const canAutoPlay = userPremium && sdkReady
+
 	return (
 		<div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-slate-950 via-slate-950/98 to-transparent">
 			<div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
-				<iframe
-					key={iframeKey}
-					className="w-full rounded-xl shadow-2xl"
-					src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0&autoplay=1`}
-					height="80"
-					frameBorder="0"
-					allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-					loading="lazy"
-				/>
+				{canAutoPlay ? (
+					<div className="bg-slate-900 rounded-xl shadow-2xl p-3">
+						<div className="flex items-center gap-3">
+							<img
+								src={track.thumbnail}
+								alt={track.title}
+								className="w-12 h-12 rounded-lg object-cover"
+							/>
+							<div className="flex-1 min-w-0">
+								<p className="text-sm font-medium text-white truncate">{track.title}</p>
+								<p className="text-xs text-slate-400 truncate">{track.artist}</p>
+							</div>
+							<span className="text-xs text-green-400">Auto-playing</span>
+						</div>
+					</div>
+				) : (
+					<iframe
+						key={iframeKey}
+						className="w-full rounded-xl shadow-2xl"
+						src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
+						height="80"
+						frameBorder="0"
+						allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+						loading="lazy"
+					/>
+				)}
 			</div>
 		</div>
 	)
