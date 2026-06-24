@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { SyncContext } from './SyncContextDefinition'
-import { createRoom as fbCreateRoom, joinRoom as fbJoinRoom, setTrack as fbSetTrack, setPlaylist as fbSetPlaylist, leaveRoom as fbLeaveRoom } from '../api/sync'
+import { createRoom as fbCreateRoom, joinRoom as fbJoinRoom, setTrack as fbSetTrack, setPlaylist as fbSetPlaylist, leaveRoom as fbLeaveRoom, registerPresence } from '../api/sync'
 
 export function SyncProvider({ children }) {
 	const [roomId, setRoomId] = useState(null)
@@ -10,10 +10,12 @@ export function SyncProvider({ children }) {
 	const [remoteMood, setRemoteMood] = useState(null)
 	const [listeners, setListeners] = useState(0)
 	const unsubRef = useRef(null)
+	const unsubPresenceRef = useRef(null)
 
 	useEffect(() => {
 		return () => {
 			if (unsubRef.current) unsubRef.current()
+			if (unsubPresenceRef.current) unsubPresenceRef.current()
 		}
 	}, [])
 
@@ -23,12 +25,15 @@ export function SyncProvider({ children }) {
 		setIsHost(true)
 
 		if (unsubRef.current) unsubRef.current()
+		if (unsubPresenceRef.current) unsubPresenceRef.current()
+
 		unsubRef.current = fbJoinRoom(id, (data) => {
 			setCurrentTrack(data.currentTrack)
 			setRemoteTracks(data.tracks || [])
 			setRemoteMood(data.mood)
-			setListeners(data.listeners || 0)
-		})
+		}, (count) => setListeners(count))
+
+		unsubPresenceRef.current = registerPresence(id)
 
 		return id
 	}, [])
@@ -38,12 +43,15 @@ export function SyncProvider({ children }) {
 		setIsHost(false)
 
 		if (unsubRef.current) unsubRef.current()
+		if (unsubPresenceRef.current) unsubPresenceRef.current()
+
 		unsubRef.current = fbJoinRoom(id, (data) => {
 			setCurrentTrack(data.currentTrack)
 			setRemoteTracks(data.tracks || [])
 			setRemoteMood(data.mood)
-			setListeners(data.listeners || 0)
-		})
+		}, (count) => setListeners(count))
+
+		unsubPresenceRef.current = registerPresence(id)
 	}, [])
 
 	const playTrack = useCallback((track) => {
@@ -64,12 +72,17 @@ export function SyncProvider({ children }) {
 			unsubRef.current()
 			unsubRef.current = null
 		}
+		if (unsubPresenceRef.current) {
+			unsubPresenceRef.current()
+			unsubPresenceRef.current = null
+		}
 		if (roomId) fbLeaveRoom(roomId)
 		setRoomId(null)
 		setIsHost(false)
 		setCurrentTrack(null)
 		setRemoteTracks([])
 		setRemoteMood(null)
+		setListeners(0)
 	}, [roomId])
 
 	return (

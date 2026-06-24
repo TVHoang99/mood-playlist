@@ -1,4 +1,4 @@
-import { ref, set, onValue, off, push } from 'firebase/database'
+import { ref, set, onValue, off, push, onDisconnect, onChildAdded, onChildRemoved, serverTimestamp } from 'firebase/database'
 import { db } from '../firebase'
 
 export function createRoom() {
@@ -14,15 +14,51 @@ export function createRoom() {
 	return roomId
 }
 
-export function joinRoom(roomId, callback) {
+export function registerPresence(roomId) {
+	const presenceRef = ref(db, `rooms/${roomId}/presence`)
+	const myRef = push(presenceRef)
+	const connectedRef = ref(db, '.info/connected')
+
+	const unsubConnected = onValue(connectedRef, (snap) => {
+		if (snap.val() === true) {
+			onDisconnect(myRef).remove()
+			set(myRef, { joinedAt: serverTimestamp() })
+		}
+	})
+
+	return () => {
+		unsubConnected()
+		myRef.remove()
+	}
+}
+
+export function joinRoom(roomId, callback, onListenersChange) {
 	const roomRef = ref(db, `rooms/${roomId}`)
-	onValue(roomRef, (snapshot) => {
+	const unsubData = onValue(roomRef, (snapshot) => {
 		const data = snapshot.val()
 		if (data) {
 			callback(data)
 		}
 	})
-	return () => off(roomRef)
+
+	const presenceRef = ref(db, `rooms/${roomId}/presence`)
+	let count = 0
+
+	const unsubAdded = onChildAdded(presenceRef, () => {
+		count++
+		if (onListenersChange) onListenersChange(count)
+	})
+
+	const unsubRemoved = onChildRemoved(presenceRef, () => {
+		count = Math.max(0, count - 1)
+		if (onListenersChange) onListenersChange(count)
+	})
+
+	return () => {
+		unsubData()
+		unsubAdded()
+		unsubRemoved()
+	}
 }
 
 export function setRoomData(roomId, data) {
