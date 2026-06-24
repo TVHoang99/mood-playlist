@@ -43,6 +43,7 @@ export function useSpotifyPlayer() {
 	const [player, setPlayer] = useState(null)
 	const [deviceId, setDeviceId] = useState(null)
 	const [isPlaying, setIsPlaying] = useState(false)
+	const [error, setError] = useState(null)
 	const playerRef = useRef(null)
 	const mountedRef = useRef(true)
 
@@ -83,9 +84,37 @@ export function useSpotifyPlayer() {
 				}
 			})
 
+			p.addListener('initialization_error', ({ message }) => {
+				if (!cancelled && mountedRef.current) {
+					setError(message)
+				}
+			})
+
+			p.addListener('authentication_error', ({ message }) => {
+				if (!cancelled && mountedRef.current) {
+					setError(message)
+				}
+			})
+
+			p.addListener('account_error', ({ message }) => {
+				if (!cancelled && mountedRef.current) {
+					setError(message)
+				}
+			})
+
+			p.addListener('playback_error', ({ message }) => {
+				if (!cancelled && mountedRef.current) {
+					setError(message)
+				}
+			})
+
 			p.connect()
 			playerRef.current = p
-		}).catch(() => {})
+		}).catch((err) => {
+			if (!cancelled && mountedRef.current) {
+				setError(err.message)
+			}
+		})
 
 		return () => {
 			cancelled = true
@@ -126,5 +155,5 @@ export function useSpotifyPlayer() {
 		if (player) player.togglePlay()
 	}, [player])
 
-	return { player, deviceId, isPlaying, playTrack, togglePlay }
+	return { player, deviceId, isPlaying, playTrack, togglePlay, error }
 }

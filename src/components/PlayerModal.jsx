@@ -5,7 +5,6 @@ import { useSpotifyPlayer } from '../hooks/useSpotifyPlayer'
 export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const overlayRef = useRef(null)
 	const { player: spotifyPlayer, playTrack, togglePlay, isPlaying } = useSpotifyPlayer()
-	const spotifyReady = !!spotifyPlayer
 
 	useEffect(() => {
 		if (!track) return
@@ -26,7 +25,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 
 	if (!track) return null
 
-	const useSpotifySDK = isLoggedIn() && spotifyReady
+	const showSDKPlayer = isLoggedIn() && !!spotifyPlayer
 
 	const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
 	const prevTrack = currentIndex > 0 ? tracks[currentIndex - 1] : null
@@ -49,7 +48,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 				</button>
 
 				<div className="bg-slate-900 rounded-2xl overflow-hidden border border-slate-700">
-					{useSpotifySDK && (
+					{showSDKPlayer && (
 						<div className="p-6 flex flex-col items-center gap-4">
 							<img
 								src={track.thumbnail}
@@ -69,7 +68,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 						</div>
 					)}
 
-					{!useSpotifySDK && (
+					{!showSDKPlayer && (
 						<div className="p-4">
 							<iframe
 								className="w-full rounded-lg"
