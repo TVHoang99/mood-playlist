@@ -16,22 +16,22 @@ export default function MoodSelector() {
 	}
 
 	return (
-		<div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+		<div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
 			{Object.entries(MOODS).map(([key, mood]) => (
 				<button
 					key={key}
 					onClick={() => handleMoodSelect(key)}
 					disabled={state.loading}
 					className={`
-						relative p-6 rounded-2xl border-2 transition-all duration-300
+						relative p-4 rounded-2xl border-2 transition-all duration-300
 						${mood.bg} ${mood.border}
 						${state.activeMood === key ? `ring-2 ${mood.ring} scale-105` : ''}
 						${state.loading ? 'opacity-50 cursor-wait' : 'hover:scale-105 cursor-pointer'}
-						flex flex-col items-center gap-3
+						flex flex-col items-center gap-2
 					`}
 				>
-					<span className="text-4xl">{mood.icon}</span>
-					<span className={`text-lg font-semibold ${mood.accent}`}>{mood.label}</span>
+					<span className="text-3xl">{mood.icon}</span>
+					<span className={`text-sm font-semibold ${mood.accent}`}>{mood.label}</span>
 				</button>
 			))}
 		</div>
