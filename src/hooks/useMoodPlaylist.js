@@ -3,9 +3,11 @@ import { usePlaylist } from './usePlaylist'
 import { searchTracks } from '../api/spotify'
 import { isLoggedIn } from '../api/spotifyAuth'
 import { MOODS } from '../utils/moodConfig'
+import { useSync } from './useSync'
 
 export function useMoodPlaylist() {
 	const { dispatch } = usePlaylist()
+	const { roomId, syncPlaylist } = useSync()
 	const abortRef = useRef(null)
 
 	const fetchPlaylist = useCallback(
@@ -33,13 +35,18 @@ export function useMoodPlaylist() {
 					dispatch({ type: 'SET_ERROR', error: 'No tracks found' })
 					return
 				}
-				dispatch({ type: 'SET_PLAYLIST', tracks: tracks.slice(0, 20) })
+				const slicedTracks = tracks.slice(0, 20)
+				dispatch({ type: 'SET_PLAYLIST', tracks: slicedTracks })
+
+				if (roomId) {
+					syncPlaylist(mood, slicedTracks)
+				}
 			} catch (err) {
 				if (err.name === 'AbortError') return
 				dispatch({ type: 'SET_ERROR', error: err.message || 'Failed to fetch playlists' })
 			}
 		},
-		[dispatch]
+		[dispatch, roomId, syncPlaylist]
 	)
 
 	return { fetchPlaylist }

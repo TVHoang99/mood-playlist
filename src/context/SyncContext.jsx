@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { SyncContext } from './SyncContextDefinition'
-import { createRoom as fbCreateRoom, joinRoom as fbJoinRoom, setTrack as fbSetTrack, leaveRoom as fbLeaveRoom } from '../api/sync'
+import { createRoom as fbCreateRoom, joinRoom as fbJoinRoom, setTrack as fbSetTrack, setPlaylist as fbSetPlaylist, leaveRoom as fbLeaveRoom } from '../api/sync'
 
 export function SyncProvider({ children }) {
 	const [roomId, setRoomId] = useState(null)
 	const [currentTrack, setCurrentTrack] = useState(null)
+	const [remoteTracks, setRemoteTracks] = useState([])
+	const [remoteMood, setRemoteMood] = useState(null)
 	const [listeners, setListeners] = useState(0)
 	const unsubRef = useRef(null)
 
@@ -21,6 +23,8 @@ export function SyncProvider({ children }) {
 		if (unsubRef.current) unsubRef.current()
 		unsubRef.current = fbJoinRoom(id, (data) => {
 			setCurrentTrack(data.currentTrack)
+			setRemoteTracks(data.tracks || [])
+			setRemoteMood(data.mood)
 			setListeners(data.listeners || 0)
 		})
 
@@ -33,6 +37,8 @@ export function SyncProvider({ children }) {
 		if (unsubRef.current) unsubRef.current()
 		unsubRef.current = fbJoinRoom(id, (data) => {
 			setCurrentTrack(data.currentTrack)
+			setRemoteTracks(data.tracks || [])
+			setRemoteMood(data.mood)
 			setListeners(data.listeners || 0)
 		})
 	}, [])
@@ -43,6 +49,13 @@ export function SyncProvider({ children }) {
 		fbSetTrack(roomId, track)
 	}, [roomId])
 
+	const syncPlaylist = useCallback((mood, tracks) => {
+		if (!roomId) return
+		setRemoteTracks(tracks)
+		setRemoteMood(mood)
+		fbSetPlaylist(roomId, mood, tracks)
+	}, [roomId])
+
 	const leaveCurrentRoom = useCallback(() => {
 		if (unsubRef.current) {
 			unsubRef.current()
@@ -51,16 +64,21 @@ export function SyncProvider({ children }) {
 		if (roomId) fbLeaveRoom(roomId)
 		setRoomId(null)
 		setCurrentTrack(null)
+		setRemoteTracks([])
+		setRemoteMood(null)
 	}, [roomId])
 
 	return (
 		<SyncContext.Provider value={{
 			roomId,
 			currentTrack,
+			remoteTracks,
+			remoteMood,
 			listeners,
 			createNewRoom,
 			joinExistingRoom,
 			playTrack,
+			syncPlaylist,
 			leaveCurrentRoom
 		}}>
 			{children}

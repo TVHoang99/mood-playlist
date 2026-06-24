@@ -6,6 +6,8 @@ export function createRoom() {
 	const roomId = roomRef.key
 	set(roomRef, {
 		currentTrack: null,
+		mood: null,
+		tracks: [],
 		isPlaying: false,
 		createdAt: Date.now()
 	})
@@ -23,7 +25,7 @@ export function joinRoom(roomId, callback) {
 	return () => off(roomRef)
 }
 
-export function updateRoom(roomId, data) {
+export function setRoomData(roomId, data) {
 	const roomRef = ref(db, `rooms/${roomId}`)
 	set(roomRef, data)
 }
@@ -33,9 +35,13 @@ export function setTrack(roomId, track) {
 	set(roomRef, track)
 }
 
-export function setPlaying(roomId, isPlaying) {
-	const roomRef = ref(db, `rooms/${roomId}/isPlaying`)
-	set(roomRef, isPlaying)
+export function setPlaylist(roomId, mood, tracks) {
+	const updates = {
+		mood: mood,
+		tracks: tracks
+	}
+	const roomRef = ref(db, `rooms/${roomId}`)
+	set(roomRef, updates)
 }
 
 export function leaveRoom(roomId) {

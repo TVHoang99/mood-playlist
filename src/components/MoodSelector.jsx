@@ -1,17 +1,26 @@
 import { MOODS } from '../utils/moodConfig'
 import { usePlaylist } from '../hooks/usePlaylist'
 import { useMoodPlaylist } from '../hooks/useMoodPlaylist'
+import { useSync } from '../hooks/useSync'
 
 export default function MoodSelector() {
 	const { state } = usePlaylist()
 	const { fetchPlaylist } = useMoodPlaylist()
+	const { roomId, syncPlaylist } = useSync()
+
+	const handleMoodSelect = async (mood) => {
+		await fetchPlaylist(mood)
+		if (roomId && state.tracks.length > 0) {
+			syncPlaylist(mood, state.tracks)
+		}
+	}
 
 	return (
 		<div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
 			{Object.entries(MOODS).map(([key, mood]) => (
 				<button
 					key={key}
-					onClick={() => fetchPlaylist(key)}
+					onClick={() => handleMoodSelect(key)}
 					disabled={state.loading}
 					className={`
 						relative p-6 rounded-2xl border-2 transition-all duration-300
