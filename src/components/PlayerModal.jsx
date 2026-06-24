@@ -1,24 +1,37 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useSync } from '../hooks/useSync'
 
 export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const overlayRef = useRef(null)
 	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
+	const [iframeKey, setIframeKey] = useState(0)
+	const lastSyncedId = useRef(null)
+	const prevTrackId = useRef(null)
 
 	useEffect(() => {
 		if (!track) return
-		if (roomId) {
-			syncTrack(track)
+		if (prevTrackId.current !== track.id) {
+			prevTrackId.current = track.id
+			setIframeKey((k) => k + 1)
 		}
+	}, [track])
+
+	useEffect(() => {
+		if (!track || !roomId) return
+		if (lastSyncedId.current === track.id) return
+		lastSyncedId.current = track.id
+		syncTrack(track)
 	}, [track, roomId, syncTrack])
 
 	useEffect(() => {
-		if (!roomId || !currentTrack) return
+		if (!roomId || !currentTrack || isHost) return
+		if (lastSyncedId.current === currentTrack.id) return
 		const exists = tracks.find((t) => t.id === currentTrack.id && t.source === currentTrack.source)
 		if (exists && (!track || track.id !== currentTrack.id)) {
+			lastSyncedId.current = currentTrack.id
 			onPlay(currentTrack)
 		}
-	}, [currentTrack, roomId, tracks, track, onPlay])
+	}, [currentTrack, roomId, isHost, tracks, track, onPlay])
 
 	const handleKeyDown = useCallback((e) => {
 		if (e.key === 'Escape') onClose()
@@ -56,6 +69,7 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 				<div className="bg-slate-900 rounded-2xl overflow-hidden border border-slate-700">
 					<div className="p-4">
 						<iframe
+							key={iframeKey}
 							className="w-full rounded-lg"
 							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
 							height="352"
