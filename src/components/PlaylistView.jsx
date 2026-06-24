@@ -13,13 +13,39 @@ export default function PlaylistView() {
 	const [saved, setSaved] = useState(false)
 	const [activeTrack, setActiveTrack] = useState(null)
 	const [showModal, setShowModal] = useState(false)
+	const [remainingTime, setRemainingTime] = useState(null)
 	const savedTimerRef = useRef(null)
+	const timerRef = useRef(null)
 
 	useEffect(() => {
 		return () => {
 			if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+			if (timerRef.current) clearInterval(timerRef.current)
 		}
 	}, [])
+
+	useEffect(() => {
+		if (timerRef.current) clearInterval(timerRef.current)
+
+		const duration = activeTrack?.duration_ms
+		if (!activeTrack || !duration) return
+
+		const startTime = Date.now()
+
+		timerRef.current = setInterval(() => {
+			const remaining = duration - (Date.now() - startTime)
+			if (remaining <= 0) {
+				clearInterval(timerRef.current)
+				setRemainingTime(0)
+			} else {
+				setRemainingTime(remaining)
+			}
+		}, 1000)
+
+		return () => {
+			if (timerRef.current) clearInterval(timerRef.current)
+		}
+	}, [activeTrack])
 
 	if (state.loading) {
 		return (
@@ -96,6 +122,7 @@ export default function PlaylistView() {
 						track={track}
 						isActive={activeTrack?.id === track.id && activeTrack?.source === track.source}
 						onPlay={setActiveTrack}
+						remainingTime={activeTrack?.id === track.id && activeTrack?.source === track.source ? remainingTime : null}
 					/>
 				))}
 			</div>
