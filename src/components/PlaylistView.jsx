@@ -100,7 +100,6 @@ export default function PlaylistView() {
 
 			<BottomPlayer
 				track={activeTrack}
-				tracks={state.tracks}
 				onPlay={setActiveTrack}
 			/>
 		</div>
