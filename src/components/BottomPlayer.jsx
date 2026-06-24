@@ -73,7 +73,7 @@ function loadSpotifySDK() {
 	return sdkPromise
 }
 
-export default function BottomPlayer({ track, onPlay }) {
+export default function BottomPlayer({ track, tracks, onPlay }) {
 	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
@@ -83,6 +83,7 @@ export default function BottomPlayer({ track, onPlay }) {
 	const [sdkReady, setSdkReady] = useState(false)
 	const [userPremium, setUserPremium] = useState(false)
 	const [debugMsg, setDebugMsg] = useState('')
+	const [isPlaying, setIsPlaying] = useState(false)
 
 	const initSDK = useCallback(() => {
 		if (sdkFailed) {
@@ -130,6 +131,11 @@ export default function BottomPlayer({ track, onPlay }) {
 
 			p.addListener('playback_error', (err) => {
 				console.log('[Player] Playback error:', err.message)
+			})
+
+			p.addListener('player_state_changed', (state) => {
+				if (!state) return
+				setIsPlaying(!state.paused)
 			})
 
 			p.connect().then((connected) => {
@@ -184,6 +190,32 @@ export default function BottomPlayer({ track, onPlay }) {
 		}
 	}, [])
 
+	const togglePlayPause = useCallback(async () => {
+		if (!playerRef.current || !sdkReady) return
+
+		if (isPlaying) {
+			await playerRef.current.pause()
+		} else {
+			await playerRef.current.resume()
+		}
+	}, [isPlaying, sdkReady])
+
+	const playPrev = useCallback(() => {
+		if (!track || !tracks || !tracks.length || !onPlay) return
+		const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
+		if (currentIndex > 0) {
+			onPlay(tracks[currentIndex - 1])
+		}
+	}, [track, tracks, onPlay])
+
+	const playNext = useCallback(() => {
+		if (!track || !tracks || !tracks.length || !onPlay) return
+		const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
+		if (currentIndex < tracks.length - 1) {
+			onPlay(tracks[currentIndex + 1])
+		}
+	}, [track, tracks, onPlay])
+
 	useEffect(() => {
 		if (!track) return
 
@@ -235,7 +267,40 @@ export default function BottomPlayer({ track, onPlay }) {
 								<p className="text-sm font-medium text-white truncate">{track.title}</p>
 								<p className="text-xs text-slate-400 truncate">{track.artist}</p>
 							</div>
-							<span className="text-xs text-green-400">Auto-playing</span>
+							<div className="flex items-center gap-2">
+								<button
+									onClick={playPrev}
+									disabled={!tracks || tracks.findIndex((t) => t.id === track.id && t.source === track.source) <= 0}
+									className="p-2 text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+										<path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+									</svg>
+								</button>
+								<button
+									onClick={togglePlayPause}
+									className="p-2 text-white hover:text-green-400 transition-colors cursor-pointer"
+								>
+									{isPlaying ? (
+										<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+											<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+										</svg>
+									) : (
+										<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+											<path d="M8 5v14l11-7z"/>
+										</svg>
+									)}
+								</button>
+								<button
+									onClick={playNext}
+									disabled={!tracks || tracks.findIndex((t) => t.id === track.id && t.source === track.source) >= tracks.length - 1}
+									className="p-2 text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+										<path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+									</svg>
+								</button>
+							</div>
 						</div>
 					</div>
 				) : (

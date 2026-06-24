@@ -6,11 +6,13 @@ import { MOODS } from '../utils/moodConfig'
 import TrackCard from './TrackCard'
 import ShareButton from './ShareButton'
 import BottomPlayer from './BottomPlayer'
+import PlayerModal from './PlayerModal'
 
 export default function PlaylistView() {
 	const { state, dispatch } = usePlaylist()
 	const [saved, setSaved] = useState(false)
 	const [activeTrack, setActiveTrack] = useState(null)
+	const [showModal, setShowModal] = useState(false)
 	const savedTimerRef = useRef(null)
 
 	useEffect(() => {
@@ -100,8 +102,19 @@ export default function PlaylistView() {
 
 			<BottomPlayer
 				track={activeTrack}
+				tracks={state.tracks}
 				onPlay={setActiveTrack}
+				onOpenModal={() => setShowModal(true)}
 			/>
+
+			{showModal && activeTrack && (
+				<PlayerModal
+					track={activeTrack}
+					tracks={state.tracks}
+					onClose={() => setShowModal(false)}
+					onPlay={setActiveTrack}
+				/>
+			)}
 		</div>
 	)
 }

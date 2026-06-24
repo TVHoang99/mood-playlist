@@ -11,7 +11,7 @@ import MoodSelector from './components/MoodSelector'
 import PlaylistView from './components/PlaylistView'
 
 function AppContent() {
-	const { dispatch } = usePlaylist()
+	const { dispatch, state } = usePlaylist()
 	const { fetchPlaylist } = useMoodPlaylist()
 	const { roomId, remoteTracks, remoteMood, joinExistingRoom } = useSyncHook()
 	const [authReady, setAuthReady] = useState(false)
@@ -53,9 +53,14 @@ function AppContent() {
 		dispatch({ type: 'LOAD_PLAYLIST', tracks: remoteTracks, mood: remoteMood })
 	}, [roomId, remoteTracks, remoteMood, dispatch])
 
+	const activeMood = state.activeMood
+
 	return (
 		<div className="min-h-screen">
-			<div className="max-w-4xl mx-auto px-4 pb-12">
+			{activeMood && (
+				<div className={`mood-gradient mood-gradient-${activeMood}`} />
+			)}
+			<div className="relative z-10 max-w-4xl mx-auto px-4 pb-12">
 				<Header />
 				<main className="mt-8 space-y-10">
 					<section className="text-center">
