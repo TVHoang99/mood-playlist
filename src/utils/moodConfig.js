@@ -42,7 +42,7 @@ export const MOODS = {
 	podcast: {
 		label: 'Podcast',
 		icon: '🎙️',
-		query: 'podcast vietnam',
+		query: 'podcast chữa lành',
 		gradient: 'from-orange-400 to-red-500',
 		bg: 'bg-orange-500/10',
 		accent: 'text-orange-400',
