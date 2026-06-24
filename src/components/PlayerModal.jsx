@@ -7,12 +7,15 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
 	const prevTrackId = useRef(null)
-	const iframeRef = useRef(null)
+	const wasPlayingRef = useRef(false)
+	const trackEndedRef = useRef(false)
 
 	useEffect(() => {
 		if (!track) return
 		if (prevTrackId.current !== track.id) {
 			prevTrackId.current = track.id
+			trackEndedRef.current = false
+			wasPlayingRef.current = false
 			setIframeKey((k) => k + 1)
 		}
 	}, [track])
@@ -35,6 +38,8 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 	}, [currentTrack, roomId, isHost, tracks, track, onPlay])
 
 	const handleTrackEnd = useCallback(() => {
+		if (trackEndedRef.current) return
+		trackEndedRef.current = true
 		if (!track || !tracks.length) return
 		const currentIndex = tracks.findIndex((t) => t.id === track.id && t.source === track.source)
 		if (currentIndex < tracks.length - 1) {
@@ -52,13 +57,17 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 			try {
 				const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
 				if (data.type === 'playback_update' && data.data) {
-					const { is_playing, position, duration } = data.data
-					if (!is_playing && duration > 0 && position >= duration - 1000) {
+					const { is_playing, is_buffering } = data.data
+					if (is_playing) {
+						wasPlayingRef.current = true
+						trackEndedRef.current = false
+					}
+					if (wasPlayingRef.current && !is_playing && !is_buffering) {
 						handleTrackEnd()
 					}
 				}
 			} catch {
-				// ignore parse errors
+				// ignore
 			}
 		}
 
@@ -103,9 +112,8 @@ export default function PlayerModal({ track, tracks, onClose, onPlay }) {
 					<div className="p-4">
 						<iframe
 							key={iframeKey}
-							ref={iframeRef}
 							className="w-full rounded-lg"
-							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0`}
+							src={`https://open.spotify.com/embed/track/${encodeURIComponent(track.id)}?utm_source=generator&theme=0&autoplay=1`}
 							height="352"
 							frameBorder="0"
 							allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
