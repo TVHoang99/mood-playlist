@@ -11,21 +11,13 @@ export default function PlaylistView() {
 	const { state, dispatch } = usePlaylist()
 	const [saved, setSaved] = useState(false)
 	const [activeTrack, setActiveTrack] = useState(null)
-	const [moodChanged, setMoodChanged] = useState(false)
 	const savedTimerRef = useRef(null)
-	const initialMoodRef = useRef(state.activeMood)
 
 	useEffect(() => {
 		return () => {
 			if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
 		}
 	}, [])
-
-	useEffect(() => {
-		if (initialMoodRef.current !== state.activeMood) {
-			setMoodChanged(true)
-		}
-	}, [state.activeMood])
 
 	if (state.loading) {
 		return (
@@ -109,7 +101,6 @@ export default function PlaylistView() {
 			<BottomPlayer
 				track={activeTrack}
 				onPlay={setActiveTrack}
-				moodChanged={moodChanged}
 			/>
 		</div>
 	)

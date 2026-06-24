@@ -42,7 +42,7 @@ function loadSpotifySDK() {
 	return sdkPromise
 }
 
-export default function BottomPlayer({ track, onPlay, moodChanged }) {
+export default function BottomPlayer({ track, onPlay }) {
 	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
@@ -132,11 +132,11 @@ export default function BottomPlayer({ track, onPlay, moodChanged }) {
 			prevTrackId.current = track.id
 			setIframeKey((k) => k + 1)
 
-			if (sdkReady && track.source === 'spotify' && !moodChanged) {
+			if (sdkReady && track.source === 'spotify') {
 				playOnSDK(track.id)
 			}
 		}
-	}, [track, sdkReady, playOnSDK, moodChanged])
+	}, [track, sdkReady, playOnSDK])
 
 	useEffect(() => {
 		if (!track || !roomId) return
@@ -151,10 +151,10 @@ export default function BottomPlayer({ track, onPlay, moodChanged }) {
 		if (track && track.id === currentTrack.id) return
 		lastSyncedId.current = currentTrack.id
 		onPlay(currentTrack)
-		if (sdkReady && currentTrack.source === 'spotify' && !moodChanged) {
+		if (sdkReady && currentTrack.source === 'spotify') {
 			playOnSDK(currentTrack.id)
 		}
-	}, [currentTrack, roomId, isHost, track, onPlay, sdkReady, playOnSDK, moodChanged])
+	}, [currentTrack, roomId, isHost, track, onPlay, sdkReady, playOnSDK])
 
 	if (!track) return null
 
