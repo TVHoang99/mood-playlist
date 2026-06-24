@@ -48,6 +48,8 @@ export default function BottomPlayer({ track, tracks, onPlay }) {
 	const playerRef = useRef(null)
 	const deviceIdRef = useRef(null)
 	const [sdkReady, setSdkReady] = useState(false)
+	const [position, setPosition] = useState(0)
+	const [duration, setDuration] = useState(0)
 
 	const trackRef = useRef(track)
 	const tracksRef = useRef(tracks)
@@ -62,6 +64,7 @@ export default function BottomPlayer({ track, tracks, onPlay }) {
 	useEffect(() => {
 		if (!isLoggedIn()) return
 		let cancelled = false
+		let pollInterval = null
 
 		loadSpotifySDK().then(() => {
 			if (cancelled || playerRef.current) return
@@ -84,6 +87,14 @@ export default function BottomPlayer({ track, tracks, onPlay }) {
 					deviceIdRef.current = device_id
 					playerRef.current = p
 					setSdkReady(true)
+
+					pollInterval = setInterval(() => {
+						p.getCurrentState().then((state) => {
+							if (!state || cancelled) return
+							setPosition(state.position)
+							setDuration(state.duration)
+						})
+					}, 250)
 				}
 			})
 
@@ -104,6 +115,7 @@ export default function BottomPlayer({ track, tracks, onPlay }) {
 
 		return () => {
 			cancelled = true
+			if (pollInterval) clearInterval(pollInterval)
 			if (playerRef.current) {
 				playerRef.current.disconnect()
 				playerRef.current = null
@@ -172,21 +184,39 @@ export default function BottomPlayer({ track, tracks, onPlay }) {
 
 	const useSDK = sdkReady && track.source === 'spotify'
 
+	const formatTime = (ms) => {
+		if (!ms || ms <= 0) return '0:00'
+		const minutes = Math.floor(ms / 60000)
+		const seconds = Math.floor((ms % 60000) / 1000)
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`
+	}
+
 	return (
 		<div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-slate-950 via-slate-950/98 to-transparent">
 			<div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
 				{useSDK ? (
-					<div className="bg-slate-900 rounded-xl shadow-2xl p-3 flex items-center gap-3">
-						<img
-							src={track.thumbnail}
-							alt={track.title}
-							className="w-12 h-12 rounded-lg object-cover"
-						/>
-						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-white truncate">{track.title}</p>
-							<p className="text-xs text-slate-400 truncate">{track.artist}</p>
+					<div className="bg-slate-900 rounded-xl shadow-2xl p-3">
+						<div className="flex items-center gap-3">
+							<img
+								src={track.thumbnail}
+								alt={track.title}
+								className="w-12 h-12 rounded-lg object-cover"
+							/>
+							<div className="flex-1 min-w-0">
+								<p className="text-sm font-medium text-white truncate">{track.title}</p>
+								<p className="text-xs text-slate-400 truncate">{track.artist}</p>
+							</div>
 						</div>
-						<span className="text-xs text-green-400">Playing via Premium</span>
+						<div className="mt-2 flex items-center gap-2">
+							<span className="text-[10px] text-slate-500 w-10 text-right">{formatTime(position)}</span>
+							<div className="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden">
+								<div
+									className="h-full bg-green-500 rounded-full transition-all duration-200"
+									style={{ width: duration > 0 ? `${(position / duration) * 100}%` : '0%' }}
+								/>
+							</div>
+							<span className="text-[10px] text-slate-500 w-10">-{formatTime(duration - position)}</span>
+						</div>
 					</div>
 				) : (
 					<iframe
