@@ -1,11 +1,131 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSync } from '../hooks/useSync'
+import { isLoggedIn, getAccessToken, refreshToken } from '../api/spotifyAuth'
+
+let sdkLoaded = false
+let sdkPromise = null
+let sdkFailed = false
+
+function loadSpotifySDK() {
+	if (sdkFailed) return Promise.reject(new Error('SDK failed'))
+	if (sdkLoaded) return Promise.resolve()
+	if (sdkPromise) return sdkPromise
+
+	sdkPromise = new Promise((resolve, reject) => {
+		const timeout = setTimeout(() => {
+			sdkPromise = null
+			sdkFailed = true
+			reject(new Error('timeout'))
+		}, 8000)
+
+		const script = document.createElement('script')
+		script.src = 'https://sdk.scdn.co/spotify-player.js'
+		script.async = true
+
+		script.onerror = () => {
+			clearTimeout(timeout)
+			sdkPromise = null
+			sdkFailed = true
+			reject(new Error('load'))
+		}
+
+		window.onSpotifyWebPlaybackSDKReady = () => {
+			clearTimeout(timeout)
+			sdkLoaded = true
+			sdkPromise = null
+			resolve()
+		}
+
+		document.body.appendChild(script)
+	})
+
+	return sdkPromise
+}
 
 export default function BottomPlayer({ track, onPlay }) {
 	const { roomId, isHost, currentTrack, playTrack: syncTrack } = useSync()
 	const [iframeKey, setIframeKey] = useState(0)
 	const lastSyncedId = useRef(null)
 	const prevTrackId = useRef(null)
+	const playerRef = useRef(null)
+	const deviceIdRef = useRef(null)
+	const [sdkReady, setSdkReady] = useState(false)
+	const pollRef = useRef(null)
+
+	useEffect(() => {
+		if (!isLoggedIn() || sdkFailed) return
+		let cancelled = false
+
+		loadSpotifySDK().then(() => {
+			if (cancelled || playerRef.current) return
+
+			const p = new window.Spotify.Player({
+				name: 'Mood Playlist',
+				getOAuthToken: async (cb) => {
+					let token = getAccessToken()
+					if (!isLoggedIn()) {
+						await refreshToken()
+						token = getAccessToken()
+					}
+					cb(token || '')
+				},
+				volume: 0.8,
+			})
+
+			p.addListener('ready', ({ device_id }) => {
+				if (!cancelled) {
+					deviceIdRef.current = device_id
+					playerRef.current = p
+					setSdkReady(true)
+				}
+			})
+
+			p.addListener('authentication_error', () => {
+				sdkFailed = true
+			})
+
+			p.addListener('account_error', () => {
+				sdkFailed = true
+			})
+
+			p.connect()
+		}).catch(() => {
+			sdkFailed = true
+		})
+
+		return () => {
+			cancelled = true
+			if (pollRef.current) clearInterval(pollRef.current)
+			if (playerRef.current) {
+				playerRef.current.disconnect()
+				playerRef.current = null
+			}
+		}
+	}, [])
+
+	const playOnSDK = useCallback(async (trackId) => {
+		if (!deviceIdRef.current || !playerRef.current) return false
+		try {
+			let token = getAccessToken()
+			if (!isLoggedIn()) {
+				await refreshToken()
+				token = getAccessToken()
+			}
+			if (!token) return false
+
+			const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceIdRef.current}`, {
+				method: 'PUT',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ uris: [`spotify:track:${trackId}`] }),
+			})
+			return res.ok || res.status === 204
+		} catch {
+			return false
+		}
+	}, [])
 
 	useEffect(() => {
 		if (!track) return
@@ -13,8 +133,12 @@ export default function BottomPlayer({ track, onPlay }) {
 		if (prevTrackId.current !== track.id) {
 			prevTrackId.current = track.id
 			setIframeKey((k) => k + 1)
+
+			if (sdkReady && track.source === 'spotify') {
+				playOnSDK(track.id)
+			}
 		}
-	}, [track])
+	}, [track, sdkReady, playOnSDK])
 
 	useEffect(() => {
 		if (!track || !roomId) return
@@ -29,7 +153,10 @@ export default function BottomPlayer({ track, onPlay }) {
 		if (track && track.id === currentTrack.id) return
 		lastSyncedId.current = currentTrack.id
 		onPlay(currentTrack)
-	}, [currentTrack, roomId, isHost, track, onPlay])
+		if (sdkReady && currentTrack.source === 'spotify') {
+			playOnSDK(currentTrack.id)
+		}
+	}, [currentTrack, roomId, isHost, track, onPlay, sdkReady, playOnSDK])
 
 	if (!track) return null
 
