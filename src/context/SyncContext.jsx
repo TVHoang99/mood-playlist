@@ -9,6 +9,7 @@ export function SyncProvider({ children }) {
 	const [remoteTracks, setRemoteTracks] = useState([])
 	const [remoteMood, setRemoteMood] = useState(null)
 	const [listeners, setListeners] = useState(0)
+	const [listenerIds, setListenerIds] = useState([])
 	const unsubRef = useRef(null)
 	const unsubPresenceRef = useRef(null)
 
@@ -31,7 +32,7 @@ export function SyncProvider({ children }) {
 			setCurrentTrack(data.currentTrack)
 			setRemoteTracks(data.tracks || [])
 			setRemoteMood(data.mood)
-		}, (count) => setListeners(count))
+		}, (count) => setListeners(count), (ids) => setListenerIds(ids))
 
 		unsubPresenceRef.current = registerPresence(id)
 
@@ -49,7 +50,7 @@ export function SyncProvider({ children }) {
 			setCurrentTrack(data.currentTrack)
 			setRemoteTracks(data.tracks || [])
 			setRemoteMood(data.mood)
-		}, (count) => setListeners(count))
+		}, (count) => setListeners(count), (ids) => setListenerIds(ids))
 
 		unsubPresenceRef.current = registerPresence(id)
 	}, [])
@@ -93,6 +94,7 @@ export function SyncProvider({ children }) {
 			remoteTracks,
 			remoteMood,
 			listeners,
+			listenerIds,
 			createNewRoom,
 			joinExistingRoom,
 			playTrack,

@@ -1,6 +1,10 @@
 import { ref, set, onValue, off, push, onDisconnect, onChildAdded, onChildRemoved, serverTimestamp } from 'firebase/database'
 import { db } from '../firebase'
 
+function generateUserId() {
+	return `user_${Math.random().toString(36).slice(2, 8)}`
+}
+
 export function createRoom() {
 	const roomRef = push(ref(db, 'rooms'))
 	const roomId = roomRef.key
@@ -16,13 +20,14 @@ export function createRoom() {
 
 export function registerPresence(roomId) {
 	const presenceRef = ref(db, `rooms/${roomId}/presence`)
+	const userId = generateUserId()
 	const myRef = push(presenceRef)
 	const connectedRef = ref(db, '.info/connected')
 
 	const unsubConnected = onValue(connectedRef, (snap) => {
 		if (snap.val() === true) {
 			onDisconnect(myRef).remove()
-			set(myRef, { joinedAt: serverTimestamp() })
+			set(myRef, { userId, joinedAt: serverTimestamp() })
 		}
 	})
 
@@ -32,7 +37,7 @@ export function registerPresence(roomId) {
 	}
 }
 
-export function joinRoom(roomId, callback, onListenersChange) {
+export function joinRoom(roomId, callback, onListenersChange, onListenersUpdate) {
 	const roomRef = ref(db, `rooms/${roomId}`)
 	const unsubData = onValue(roomRef, (snapshot) => {
 		const data = snapshot.val()
@@ -43,15 +48,26 @@ export function joinRoom(roomId, callback, onListenersChange) {
 
 	const presenceRef = ref(db, `rooms/${roomId}/presence`)
 	let count = 0
+	let listenerIds = []
 
-	const unsubAdded = onChildAdded(presenceRef, () => {
+	const unsubAdded = onChildAdded(presenceRef, (snap) => {
 		count++
+		const data = snap.val()
+		if (data?.userId) {
+			listenerIds = [...listenerIds, data.userId]
+		}
 		if (onListenersChange) onListenersChange(count)
+		if (onListenersUpdate) onListenersUpdate(listenerIds)
 	})
 
-	const unsubRemoved = onChildRemoved(presenceRef, () => {
+	const unsubRemoved = onChildRemoved(presenceRef, (snap) => {
 		count = Math.max(0, count - 1)
+		const data = snap.val()
+		if (data?.userId) {
+			listenerIds = listenerIds.filter((id) => id !== data.userId)
+		}
 		if (onListenersChange) onListenersChange(count)
+		if (onListenersUpdate) onListenersUpdate(listenerIds)
 	})
 
 	return () => {
